@@ -16,9 +16,12 @@ namespace RPA
         this->addPlayer(playerId, name);
     }
 
-    void Game::addPlayer(const unsigned int& playerId, const std::string& name)
+    bool Game::addPlayer(const unsigned int& playerId, const std::string& name)
     {
-        this->players.push_back(new Player(playerId, name));
+        if(this->players.size() == PARTY_LIMIT) {return false;}
+        auto player = std::make_unique<Player>(Player(playerId, name, this->players.size()));
+        this->players.push_back(std::move(player));
+        return true;
     }
 
     unsigned int Game::getId() const
@@ -29,7 +32,7 @@ namespace RPA
     //Remove client from game - typically called upon dissconection
     void Game::removePlayer(const unsigned int& playerId)
     {
-        int playerBeingRemoved = -1;
+        unsigned int playerBeingRemoved = -1;
         for (unsigned int i = 0; i < this->players.size(); i++)
         {
             if(this->players[i]->getClientId() == playerId)
@@ -37,27 +40,41 @@ namespace RPA
                 playerBeingRemoved = i;
             }
         }
-
-        this->players.erase(this->players.begin() + playerBeingRemoved);
+        resize(playerBeingRemoved);
     }
-    //Returns player specified by their client Id
-    const Player* Game::getPlayer(const unsigned int& playerId) const
+
+    //Removes dissconected player while maintaining contiguous array
+    void Game::resize(unsigned int& removedIndex)
     {
-        for(unsigned int i = 0; i < this->players.size(); i++)
+        if(removedIndex > 0) //TO-DO check index out of bounds
         {
-            RPA::Player* p = this->players[i];
+            std::swap(this->players[removedIndex], this->players[this->players.size()]);
+        }
+        this->players.erase(this->players.end());
+    }
+
+    //Returns player specified by their client Id
+    std::unique_ptr<Player> const& Game::getPlayer(const unsigned int& playerId) const
+    {
+        for(auto& p: this->players)
+        {
             if(p->getClientId() == playerId)
             {
                 return p;
             }
         }
-        return NULL;
+        return nullptr;
     }
 
     //returns all players conencted to a game
-    const std::vector<Player*> Game::getAllPlayers() const
+    std::vector<std::unique_ptr<Player> > const& Game::getAllPlayers() const
     {
         return this->players;
+    }
+
+    unsigned int Game::getPartySize() const
+    {
+        return this->players.size();
     }
     
 

@@ -60,6 +60,7 @@ std::map<unsigned int, Client> clients;
 void serve(bool& isServing);
 void listenForClient(kt::ServerSocket& server);
 void pollClient();
+void removeClient(std::pair<unsigned int, Client> client);
 
 unsigned int generateClientId(std::string ip, int port);
 std::vector<std::string> split(const std::string& original, const char& delim);
@@ -116,16 +117,28 @@ void pollClient()
 			{
 				if(!client.second.socket->send("a\n")  )
 				{
-					 if(client.second.hasGame)
-						games[client.second.gameId]->removePlayer(client.first); 
 					client.second.m.lock();
-					clients.erase(client.first);
+					removeClient(client);
 					std::cout<<" Client DISSCONNECTED - Clients Connected:: " << clients.size() << std::endl;
 				}
 				
 			}
 		}
 	}
+}
+
+void removeClient(std::pair<unsigned int, Client> client)
+{
+	if(client.second.hasGame)
+	{
+		RPA::Game* gameLeaving = games[client.second.gameId];
+		notifyByGame(client.second.gameId,"d, " + gameLeaving->getPlayer(client.first)->getName());
+		gameLeaving->removePlayer(client.first); 
+	}
+
+	clients.erase(client.first);
+	client.second.socket->close();
+
 }
 
 /* Listens for client connections*/
@@ -197,8 +210,8 @@ void serve(bool& isServing)
 ************************************************************/
 void notifyByGame(const unsigned int& gameId, std::string msg)
 {
-	std::vector<RPA::Player*> connectedPlayers = games[gameId]->getAllPlayers();
-	for(auto players: connectedPlayers)
+	//std::vector<std::unique_ptr<RPA::Player> > connectedPlayers = &games[gameId]->getAllPlayers();
+	for(auto& players: games[gameId]->getAllPlayers())
 	{
 		clients[players->getClientId()].socket->send(msg+"\n");
 	}
@@ -230,8 +243,16 @@ void joinGame(const unsigned int& gameId, const unsigned int& clientId, const st
 	}	
 	else
 	{
-		games[gameId]->addPlayer(clientId, name);
-		notifyByGame(gameId, "c," + name);
+		if(games[gameId]->addPlayer(clientId, name))
+		{
+			notifyByGame(gameId, "c," + name);
+		}
+		else
+		{
+			notifyClient(clientId,"game full");
+			removeClient(std::pair<unsigned int, Client>(clientId, clients[clientId]));
+		}
+		
 	}
 }
 
