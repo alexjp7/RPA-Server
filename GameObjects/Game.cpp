@@ -1,6 +1,6 @@
+#include <iostream>
 #include "Player.h"
 #include "Game.h"
-#include <iostream>
 
 namespace RPA
 {

@@ -15,7 +15,7 @@
 #include <random>
 #include <functional>
 #include <string>
-
+#include <signal.h>
 //Socket Library
 #include "SocketLibrary/Socket/Socket.h"
 #include "SocketLibrary/ServerSocket/ServerSocket.h"
@@ -35,10 +35,18 @@ const char READ_DELIM = '\n';
 
 struct Client 
 {
+	std::mutex m;
 	kt::Socket* socket;
 	bool hasGame;
 	unsigned int gameId;
 	Client() : hasGame(false), gameId(-1){}
+
+	Client(const Client& other)
+	{
+		this->socket = other.socket;
+		this->hasGame = other.hasGame;
+		this->gameId = other.gameId;
+	}
 
 };
 std::mutex client_guard;
@@ -58,11 +66,14 @@ std::vector<std::string> split(const std::string& original, const char& delim);
 void createGame(const unsigned int& clientId, const std::string& name);
 void joinGame(const unsigned int& gameId, const unsigned int& clientId, const std::string& name);
 void notifyByGame(const unsigned int& gameId, std::string msg);
+void notifyClient(const unsigned int& clientId, std::string msg);
 void processGameInstructions();
 /*********************************************************************************************/
 
 int main()
 {
+	//Ignores 'broken' socket connection signal
+	signal(SIGPIPE, SIG_IGN);
 	bool isServering = true;
 	std::cout<<"STARTING SERVER\n-------------------"<<std::endl;
 	try
@@ -76,6 +87,7 @@ int main()
 		{
 			if(!clients.empty())
 			{
+				std::this_thread::sleep_for(std::chrono::milliseconds(5));
 				serve(isServering);
 			}
 		}
@@ -89,26 +101,28 @@ int main()
 	return 0;
 }
 
+/*********************************************************** 
+				SERVER FUNCTIONS/CLIENT LISTENERS
+************************************************************/
 /* Polls Clients for connection, removes dissconencted  clients from vector */
 void pollClient()
 {
 	while(true)
 	{
+		std::this_thread::sleep_for(std::chrono::seconds(POLL_TIME));
 		if(!clients.empty())
 		{
-			std::this_thread::sleep_for(std::chrono::seconds(POLL_TIME));
 			for(auto& client: clients)
 			{
-				if(!client.second.socket->send("a\n"))
+				if(!client.second.socket->send("a\n")  )
 				{
-					client_guard.lock();
-					if(client.second.hasGame)
-						games[client.second.gameId]->removePlayer(client.first);
-
+					 if(client.second.hasGame)
+						games[client.second.gameId]->removePlayer(client.first); 
+					client.second.m.lock();
 					clients.erase(client.first);
-					client_guard.unlock();
 					std::cout<<" Client DISSCONNECTED - Clients Connected:: " << clients.size() << std::endl;
 				}
+				
 			}
 		}
 	}
@@ -129,7 +143,6 @@ void listenForClient(kt::ServerSocket& server)
 void serve(bool& isServing)
 {
 	bool error = false;
-	if(clients.empty()) return;
 	try
 	{
 		unsigned int gameId;
@@ -137,14 +150,17 @@ void serve(bool& isServing)
 		{
 			if(client.second.socket->ready())
 			{
-				std::vector<std::string> clientMessage = split(client.second.socket->receiveToDelimiter(READ_DELIM), ',');
+				std::string recieved = client.second.socket->receiveToDelimiter(READ_DELIM);
+				if(recieved[0] == '\0') return;
+				std::vector<std::string> clientMessage = split(recieved,',');
+
 				switch (clientMessage[0][0])
 				{
 					case 'n': //New Game, game object needs to be created
 						createGame(client.first, clientMessage[1]);
 						client.second.hasGame = true;
 						client.second.gameId = client.first;
-						std::cout <<"Game created With Id: "<<games[client.first]->getId() << std::endl;
+						std::cout <<" * Game created With Id: "<<games[client.first]->getId() << std::endl;
 						break;
 						
 					case 'j': //Joining  Game, id from existing game needs to be accepted
@@ -159,25 +175,26 @@ void serve(bool& isServing)
 						break;
 
 					default:
+						std::cout << "went in default" << std::endl;
 						break;
 				}
-
 			}
 		}
 	}
 	catch (const kt::SocketException& se)
 	{
 		std::cout << se.what() << std::endl;
-		error = true;
 	}
 	catch (...)
 	{
 		error = true;
 		std::cout << "CAUGHT IT" << std::endl;
 	}
-	assert(error == false);
 }
 
+/*********************************************************** 
+				CLIENT SEND FUNCTIONS
+************************************************************/
 void notifyByGame(const unsigned int& gameId, std::string msg)
 {
 	std::vector<RPA::Player*> connectedPlayers = games[gameId]->getAllPlayers();
@@ -187,6 +204,14 @@ void notifyByGame(const unsigned int& gameId, std::string msg)
 	}
 }
 
+void notifyClient(const unsigned int& clientId, std::string msg)
+{
+	clients[clientId].socket->send(msg+"\n");
+}
+
+/*********************************************************** 
+					GAME  FUNCTIONS
+************************************************************/
 void createGame(const unsigned int& client, const std::string& name)
 {
 	RPA::Game* game = new RPA::Game(client, name);
@@ -196,10 +221,13 @@ void createGame(const unsigned int& client, const std::string& name)
 
 void joinGame(const unsigned int& gameId, const unsigned int& clientId, const std::string& name)
 {
-	std::cout << "Join gamed selected" << std::endl;
+	std::cout << " * Join gamed selected" << std::endl;
 	std::map<unsigned int, RPA::Game*>::iterator mapIterator;
 	mapIterator = games.find(gameId);
-	if(mapIterator == games.end()) {return;} //TO-DO deal with client unsucessful game search
+	if(mapIterator == games.end()) 
+	{
+		notifyClient(clientId,"Game ID was not valid");
+	}	
 	else
 	{
 		games[gameId]->addPlayer(clientId, name);
@@ -212,12 +240,15 @@ void processGameInstructions()
 	std::cout << "Player is in game" << std::endl;
 }
 
-static int temp = 0;
+/*********************************************************** 
+  						AUXILLARY
+************************************************************/
+static int temp = 0; //REMEMBER TO NOT FORGET ABOUT this
 /* Generates a hashed ID of the client IP and Port*/
 unsigned int generateClientId(std::string ip, int port)
 {
 
-	std::hash<std::string> hasher;
+	//std::hash<std::string> hasher;
 	std::string result = "";
 	for(char c: ip)
 	{
