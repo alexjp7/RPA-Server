@@ -20,7 +20,7 @@ namespace RPA
     {
         if(this->players.size() == PARTY_LIMIT) {return false;}
         auto player = std::make_unique<Player>(Player(playerId, name, this->players.size()));
-        //this->players.push_back(std::move(player));
+        this->players.push_back(std::move(player));
         return true;
     }
 

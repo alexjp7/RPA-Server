@@ -1,0 +1,4 @@
+*.o
+SocketLibrary
+server
+*.sh

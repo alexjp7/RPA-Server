@@ -21,6 +21,7 @@
 #include "SocketLibrary/ServerSocket/ServerSocket.h"
 #include "SocketLibrary/SocketExceptions/SocketException.hpp"
 #include "SocketLibrary/SocketExceptions/BindingException.hpp"
+#include "SocketLibrary/SocketExceptions/TimeoutException.hpp"
 
 //Game Objects
 #include "GameSession/Game.h"
@@ -37,7 +38,7 @@ const char READ_DELIM = '\n';
 struct Client 
 {
 	std::mutex m;
-	kt::Socket* socket;
+	kt::Socket socket;
 	bool hasGame;
 	unsigned int gameId;
 	Client() : hasGame(false), gameId(-1){}
@@ -97,6 +98,7 @@ int main()
 			}
 		}
 		commandListener.join();
+		clientListener.join();
 		clientPollThread.join();
 		shutdown();
 		server.close();
@@ -143,11 +145,10 @@ void shutdown()
 		for(auto& client: clients)
 		{
 			notifyClient(client.first, "s,server shutdown");
-			client.second.socket->close();
+			client.second.socket.close();
 		}
 		clients.clear();
 	}
-
 }
 
 /* Listens for client connections*/
@@ -156,9 +157,17 @@ void listenForClient(kt::ServerSocket& server, const bool& isServing)
 	Client client;
 	while(isServing)
 	{
-		client.socket = new kt::Socket(server.accept());
-		clients.insert( std::pair<unsigned int,Client>(generateClientId(client.socket->getAddress(), client.socket->getPort()), client));
-		std::cout<<" Client CONNECTED -  Clients connected: " << clients.size() << std::endl;
+		try
+		{
+			client.socket = kt::Socket(server.accept(POLL_TIME));
+			clients.insert( std::pair<unsigned int,Client>(generateClientId(client.socket.getAddress(), client.socket.getPort()), client));
+			std::cout<<" Client CONNECTED -  Clients connected: " << clients.size() << std::endl;
+		}
+		catch (const kt::TimeoutException &e)
+		{
+			//catch exception in order to cease thread block caused by server.accept(), and force isServing to be re-evaluated
+
+		} 
 	}
 } 
 
@@ -172,13 +181,12 @@ void pollClient(const bool& isServing)
 		{
 			for(auto& client: clients)
 			{
-				if(!client.second.socket->send("a\n")  )
+				if(!client.second.socket.send("a\n")  )
 				{
 					client.second.m.lock();
 					removeClient(client);
 					std::cout<<" Client DISSCONNECTED - Clients Connected:: " << clients.size() << std::endl;
 				}
-				
 			}
 		}
 	}
@@ -190,15 +198,11 @@ void removeClient(std::pair<unsigned int, Client> client)
 	{
 		RPA::Game* gameLeaving = games[client.second.gameId];
 		notifyByGame(client.second.gameId,"d, " + gameLeaving->getPlayer(client.first)->getName());
-		//gameLeaving->removePlayer(client.first); 
+		gameLeaving->removePlayer(client.first); 
 	}
-
-	//clients.erase(client.first);
-	//client.second.socket->close();
-
+	clients.erase(client.first);
+	client.second.socket.close();
 }
-
-
 
 /* Main serving function running on main thread */
 void serve(const bool& isServing)
@@ -208,9 +212,9 @@ void serve(const bool& isServing)
 		unsigned int gameId;
 		for(auto& client: clients)
 		{
-			if(client.second.socket->ready())
+			if(client.second.socket.ready())
 			{
-				std::string recieved = client.second.socket->receiveToDelimiter(READ_DELIM);
+				std::string recieved = client.second.socket.receiveToDelimiter(READ_DELIM);
 				if(recieved[0] == '\0') return;
 				std::vector<std::string> clientMessage = split(recieved,',');
 
@@ -259,13 +263,13 @@ void notifyByGame(const unsigned int& gameId, std::string msg)
 	//std::vector<std::unique_ptr<RPA::Player> > connectedPlayers = &games[gameId]->getAllPlayers();
 	for(auto& players: games[gameId]->getAllPlayers())
 	{
-		clients[players->getClientId()].socket->send(msg+"\n");
+		clients[players->getClientId()].socket.send(msg+"\n");
 	}
 }
 
 void notifyClient(const unsigned int& clientId, std::string msg)
 {
-	clients[clientId].socket->send(msg+"\n");
+	clients[clientId].socket.send(msg+"\n");
 }
 
 /*********************************************************** 
@@ -298,7 +302,6 @@ void joinGame(const unsigned int& gameId, const unsigned int& clientId, const st
 			notifyClient(clientId,"game full");
 			removeClient(std::pair<unsigned int, Client>(clientId, clients[clientId]));
 		}
-		
 	}
 }
 
