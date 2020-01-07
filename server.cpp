@@ -23,11 +23,12 @@
 #include "SocketLibrary/SocketExceptions/BindingException.hpp"
 
 //Game Objects
-#include "GameObjects/Game.h"
-#include "GameObjects/Player.h"
+#include "GameSession/Game.h"
+#include "GameSession/Player.h"
 
 //Time between client polling
 const unsigned int POLL_TIME = 2;
+const unsigned int SOCKET_TIME_OUT = 2000000; //2 seconds
 //Delimiter for incoming data
 const char READ_DELIM = '\n';
 
@@ -57,10 +58,12 @@ std::map<unsigned int, Client> clients;
 
 //Function Prototypes
 /*********************************************************************************************/
-void serve(bool& isServing);
-void listenForClient(kt::ServerSocket& server);
-void pollClient();
+void serve(const bool& isServing);
+void listenForCommand(bool& isServing);
+void listenForClient(kt::ServerSocket& server, const bool& isServing);
+void pollClient(const bool& isServing);
 void removeClient(std::pair<unsigned int, Client> client);
+void shutdown();
 
 unsigned int generateClientId(std::string ip, int port);
 std::vector<std::string> split(const std::string& original, const char& delim);
@@ -75,40 +78,94 @@ int main()
 {
 	//Ignores 'broken' socket connection signal
 	signal(SIGPIPE, SIG_IGN);
-	bool isServering = true;
+	bool isServing = true;
 	std::cout<<"STARTING SERVER\n-------------------"<<std::endl;
 	try
 	{	//Initialize Server Socket, client listener and client poller threads
 		kt::ServerSocket server(kt::SocketType::Wifi, 10001);
-		std::thread clientListener (listenForClient, std::ref(server));
-		std::thread clientPollThread(pollClient);
+		std::thread commandListener (listenForCommand, std::ref(isServing));
+		std::thread clientListener (listenForClient, std::ref(server), std::ref(isServing));
+		std::thread clientPollThread(pollClient, std::ref(isServing));
 
 		//Serve while a client connection is maintained
-		while(isServering)
+		while(isServing)
 		{
 			if(!clients.empty())
 			{
 				std::this_thread::sleep_for(std::chrono::milliseconds(5));
-				serve(isServering);
+				serve(isServing);
 			}
 		}
+		commandListener.join();
+		clientPollThread.join();
+		shutdown();
 		server.close();
 	}
 	catch(std::runtime_error ex)
 	{
 		std::cout << ex.what() << std::endl;
 	}
-
 	return 0;
 }
 
 /*********************************************************** 
 				SERVER FUNCTIONS/CLIENT LISTENERS
 ************************************************************/
-/* Polls Clients for connection, removes dissconencted  clients from vector */
-void pollClient()
+//Allows for commands to be given to server via command line
+void listenForCommand(bool& isServing)
 {
-	while(true)
+	std::string instruction;
+	while (isServing)
+	{
+		std::cin>>instruction;
+		if(instruction == "shutdown")
+		{	
+			isServing = false;
+		}
+	}
+}
+
+//Terminates all connections, games and clients
+void shutdown()
+{
+	std::cout<<"STOPPING SERVER\n-------------------"<<std::endl;
+	if(!games.empty())
+	{
+		for(auto& game: games)
+		{
+			delete game.second;
+		}
+		games.clear();
+	}
+
+	if(!clients.empty())
+	{
+		for(auto& client: clients)
+		{
+			notifyClient(client.first, "s,server shutdown");
+			client.second.socket->close();
+		}
+		clients.clear();
+	}
+
+}
+
+/* Listens for client connections*/
+void listenForClient(kt::ServerSocket& server, const bool& isServing)
+{
+	Client client;
+	while(isServing)
+	{
+		client.socket = new kt::Socket(server.accept());
+		clients.insert( std::pair<unsigned int,Client>(generateClientId(client.socket->getAddress(), client.socket->getPort()), client));
+		std::cout<<" Client CONNECTED -  Clients connected: " << clients.size() << std::endl;
+	}
+} 
+
+/* Polls Clients for connection, removes dissconencted  clients from map */
+void pollClient(const bool& isServing)
+{
+	while(isServing)
 	{
 		std::this_thread::sleep_for(std::chrono::seconds(POLL_TIME));
 		if(!clients.empty())
@@ -133,29 +190,19 @@ void removeClient(std::pair<unsigned int, Client> client)
 	{
 		RPA::Game* gameLeaving = games[client.second.gameId];
 		notifyByGame(client.second.gameId,"d, " + gameLeaving->getPlayer(client.first)->getName());
-		gameLeaving->removePlayer(client.first); 
+		//gameLeaving->removePlayer(client.first); 
 	}
 
-	clients.erase(client.first);
-	client.second.socket->close();
+	//clients.erase(client.first);
+	//client.second.socket->close();
 
 }
 
-/* Listens for client connections*/
-void listenForClient(kt::ServerSocket& server)
-{
-	Client client;
-	while(true)
-	{
-		client.socket = new kt::Socket(server.accept());
-		clients.insert( std::pair<unsigned int,Client>(generateClientId(client.socket->getAddress(), client.socket->getPort()), client));
-		std::cout<<" Client CONNECTED -  Clients connected: " << clients.size() << std::endl;
-	}
-} 
+
+
 /* Main serving function running on main thread */
-void serve(bool& isServing)
+void serve(const bool& isServing)
 {
-	bool error = false;
 	try
 	{
 		unsigned int gameId;
@@ -200,7 +247,6 @@ void serve(bool& isServing)
 	}
 	catch (...)
 	{
-		error = true;
 		std::cout << "CAUGHT IT" << std::endl;
 	}
 }

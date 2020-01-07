@@ -4,14 +4,14 @@ POSTFLAGS = -lbluetooth -Wall -std=c++14 -pthread
 
 all:	RPA
 
-RPA:	GameObjects/Player.o GameObjects/Game.o SocketLibrary/Socket.o SocketLibrary/Socket/Socket.h SocketLibrary/ServerSocket.o SocketLibrary/ServerSocket/ServerSocket.h
+RPA:	GameSession/Player.o GameSession/Game.o SocketLibrary/Socket.o SocketLibrary/Socket/Socket.h SocketLibrary/ServerSocket.o SocketLibrary/ServerSocket/ServerSocket.h
 	$(CC) $(PREFLAGS) SocketLibrary/ServerSocket.o SocketLibrary/Socket.o Player.o Game.o server.cpp -o server $(POSTFLAGS)
 	
-GameObjects/Game.o:	GameObjects/Game.cpp GameObjects/Game.h
-	$(CC) $(PREFLAGS) -c GameObjects/Game.cpp Player.o $(POSTFLAGS)
+GameSession/Game.o:	GameSession/Game.cpp GameSession/Game.h
+	$(CC) $(PREFLAGS) -c GameSession/Game.cpp Player.o $(POSTFLAGS)
 
-GameObjects/Player.o:	GameObjects/Player.cpp GameObjects/Player.h
-	$(CC) $(PREFLAGS) -c GameObjects/Player.cpp $(POSTFLAGS)
+GameSession/Player.o:	GameSession/Player.cpp GameSession/Player.h
+	$(CC) $(PREFLAGS) -c GameSession/Player.cpp $(POSTFLAGS)
 
 Socket.o:	SocketLibrary/Socket/Socket.cpp SocketLibrary/Socket/Socket.h
 	$(CC) $(PREFLAGS) -c Socket/Socket.cpp $(POSTFLAGS)
