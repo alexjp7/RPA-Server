@@ -51,9 +51,8 @@ struct Client
 	}
 
 };
-std::mutex client_guard;
 
-std::map<unsigned int, RPA::Game*> games;
+std::map<unsigned int, std::unique_ptr<RPA::Game> > games;
 std::map<unsigned int, Client> clients;
 
 
@@ -66,13 +65,13 @@ void pollClient(const bool& isServing);
 void removeClient(std::pair<unsigned int, Client> client);
 void shutdown();
 
-unsigned int generateClientId(std::string ip, int port);
-std::vector<std::string> split(const std::string& original, const char& delim);
 void createGame(const unsigned int& clientId, const std::string& name);
 void joinGame(const unsigned int& gameId, const unsigned int& clientId, const std::string& name);
+void processGameInstructions(const std::vector<std::string>&  clientMessage);
 void notifyByGame(const unsigned int& gameId, std::string msg);
 void notifyClient(const unsigned int& clientId, std::string msg);
-void processGameInstructions();
+unsigned int generateClientId(std::string ip, int port);
+std::vector<std::string> split(const std::string& original, const char& delim);
 /*********************************************************************************************/
 
 int main()
@@ -133,10 +132,6 @@ void shutdown()
 	std::cout<<"STOPPING SERVER\n-------------------"<<std::endl;
 	if(!games.empty())
 	{
-		for(auto& game: games)
-		{
-			delete game.second;
-		}
 		games.clear();
 	}
 
@@ -196,9 +191,8 @@ void removeClient(std::pair<unsigned int, Client> client)
 {
 	if(client.second.hasGame)
 	{
-		RPA::Game* gameLeaving = games[client.second.gameId];
-		notifyByGame(client.second.gameId,"d, " + gameLeaving->getPlayer(client.first)->getName());
-		gameLeaving->removePlayer(client.first); 
+		notifyByGame(client.second.gameId,"d, " + games[client.second.gameId]->getPlayer(client.first)->getName());
+		games[client.second.gameId]->removePlayer(client.first); 
 	}
 	clients.erase(client.first);
 	client.second.socket.close();
@@ -235,7 +229,7 @@ void serve(const bool& isServing)
 						break;
 
 					case 'i': //Client is in game, and instructions relate to a particualr state of the game 
-						processGameInstructions();
+						processGameInstructions(clientMessage);
 						break;
 
 					default:
@@ -277,15 +271,15 @@ void notifyClient(const unsigned int& clientId, std::string msg)
 ************************************************************/
 void createGame(const unsigned int& client, const std::string& name)
 {
-	RPA::Game* game = new RPA::Game(client, name);
-	games.insert(std::pair<unsigned int, RPA::Game*>(client, game)); 
+	auto game = std::make_unique<RPA::Game>(client, name);
+	games.insert(std::pair<unsigned int, std::unique_ptr<RPA::Game> >(client, std::move(game))); 
 	notifyByGame(game->getId(), "c," + name); //TO-DO - fix test message
 }
 
 void joinGame(const unsigned int& gameId, const unsigned int& clientId, const std::string& name)
 {
 	std::cout << " * Join gamed selected" << std::endl;
-	std::map<unsigned int, RPA::Game*>::iterator mapIterator;
+	std::map<unsigned int, std::unique_ptr<RPA::Game> >::iterator mapIterator;
 	mapIterator = games.find(gameId);
 	if(mapIterator == games.end()) 
 	{
@@ -305,9 +299,16 @@ void joinGame(const unsigned int& gameId, const unsigned int& clientId, const st
 	}
 }
 
-void processGameInstructions()
+void processGameInstructions(const std::vector<std::string>& clientMessage)
 {
-	std::cout << "Player is in game" << std::endl;
+	unsigned int gameId = std::stoi(clientMessage[1]);
+	// 0 = server instruction
+	// 1 = gameId
+	// 2 = state manager instruction
+	// 3 + =  state instruction
+	std::string serverReply = games[gameId]->processInstruction(clientMessage);
+	notifyByGame(gameId,serverReply);
+
 }
 
 /*********************************************************** 

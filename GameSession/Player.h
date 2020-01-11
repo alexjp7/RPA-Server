@@ -2,10 +2,11 @@
 #include <string>
 namespace RPA
 {
+    //enum PlayerClass {WARRIOR = 'w', WIZARD = 'z', ROGUE = 'r', CLERIC = 'c'};
     class Player
     {
         private:
-            char p_class;
+            //PlayerClass playerClass;
             std::string name;
             unsigned int goldCoins;
             unsigned int clientId;

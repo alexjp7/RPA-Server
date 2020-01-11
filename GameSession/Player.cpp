@@ -12,7 +12,7 @@ namespace RPA
 
     char Player::getClass() const
     {
-        return this->p_class;
+        return 'x';
     }
 
     unsigned int Player::getClientId() const
@@ -32,7 +32,7 @@ namespace RPA
 
     void Player::setClass(const char& _class) 
     {
-        this->p_class = _class;
+        //this->playerClass = _class;
     }
 
     void Player::setName(const std::string& newName)

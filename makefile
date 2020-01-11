@@ -4,20 +4,20 @@ POSTFLAGS = -lbluetooth -Wall -std=c++14 -pthread
 
 all:	RPA
 
-RPA:	GameSession/Player.o GameSession/Game.o SocketLibrary/Socket.o SocketLibrary/Socket/Socket.h SocketLibrary/ServerSocket.o SocketLibrary/ServerSocket/ServerSocket.h
-	$(CC) $(PREFLAGS) SocketLibrary/ServerSocket.o SocketLibrary/Socket.o Player.o Game.o server.cpp -o server $(POSTFLAGS)
+RPA:	Player.o Game.o StateManager.o CharacterCreation.o GameSession/Game.h GameSession/Player.h SocketLibrary/Socket.o SocketLibrary/Socket/Socket.h SocketLibrary/ServerSocket.o SocketLibrary/ServerSocket/ServerSocket.h
+	$(CC) $(PREFLAGS) Player.o Game.o CharacterCreation.o StateManager.o SocketLibrary/ServerSocket.o SocketLibrary/Socket.o server.cpp -o server $(POSTFLAGS)
 	
-GameSession/Game.o:	GameSession/Game.cpp GameSession/Game.h
-	$(CC) $(PREFLAGS) -c GameSession/Game.cpp Player.o $(POSTFLAGS)
+CharacterCreation.o:	GameSession/GameStates/CharacterCreation.cpp GameSession/GameStates/CharacterCreation.h GameSession/GameStates/GameState.h
+	$(CC) $(PREFLAGS) -c GameSession/GameStates/CharacterCreation.cpp $(POSTFLAGS)
 
-GameSession/Player.o:	GameSession/Player.cpp GameSession/Player.h
+StateManager.o:	GameSession/GameStates/StateManager.cpp GameSession/GameStates/StateManager.h
+	$(CC) $(PREFLAGS) -c GameSession/GameStates/StateManager.cpp $(POSTFLAGS)
+
+Game.o:	GameSession/Game.cpp GameSession/Game.h
+	$(CC) $(PREFLAGS) -c GameSession/Game.cpp $(POSTFLAGS)
+
+Player.o:	GameSession/Player.cpp GameSession/Player.h
 	$(CC) $(PREFLAGS) -c GameSession/Player.cpp $(POSTFLAGS)
-
-Socket.o:	SocketLibrary/Socket/Socket.cpp SocketLibrary/Socket/Socket.h
-	$(CC) $(PREFLAGS) -c Socket/Socket.cpp $(POSTFLAGS)
-
-ServerSocket.o:	SocketLibrary/ServerSocket/ServerSocket.cpp SocketLibrary/ServerSocket/ServerSocket.h
-	$(CC) $(PREFLAGS) -c SocketLibrary/ServerSocket/ServerSocket.cpp $(POSTFLAGS)
 
 clean:
 	rm *.o
