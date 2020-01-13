@@ -2,13 +2,13 @@
 #include <string>
 namespace RPA
 {
-    //enum PlayerClass {WARRIOR = 'w', WIZARD = 'z', ROGUE = 'r', CLERIC = 'c'};
+    enum ADVENTURING_CLASS {WARRIOR = 0, WIZARD, ROGUE, CLERIC};
     class Player
     {
         private:
-            //PlayerClass playerClass;
             std::string name;
             unsigned int goldCoins;
+            unsigned int playerClass;
             unsigned int clientId;
             unsigned int partyId;
 
@@ -16,12 +16,12 @@ namespace RPA
             Player(const unsigned int&, const std::string&, const unsigned int&);
             ~Player();
             
-            char getClass() const;
             std::string getName() const;
+            unsigned int getClass() const;
             unsigned int getClientId() const;
             unsigned int getPartyId() const;
 
-            void setClass(const char&);
+            void setClass(const unsigned int&);
             void setName(const std::string&);
     };
 }

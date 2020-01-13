@@ -1,11 +1,8 @@
-
 #include <iostream>
-#include <fstream>
 #include <thread>
 #include <exception>
 #include <stdexcept>
 #include <utility>
-#include <assert.h>
 #include <vector>
 #include <mutex>
 #include <functional>
@@ -33,8 +30,6 @@ const unsigned int SOCKET_TIME_OUT = 2000000; //2 seconds
 //Delimiter for incoming data
 const char READ_DELIM = '\n';
 
-
-
 struct Client 
 {
 	std::mutex m;
@@ -49,12 +44,10 @@ struct Client
 		this->hasGame = other.hasGame;
 		this->gameId = other.gameId;
 	}
-
 };
 
 std::map<unsigned int, std::unique_ptr<RPA::Game> > games;
 std::map<unsigned int, Client> clients;
-
 
 //Function Prototypes
 /*********************************************************************************************/
@@ -62,13 +55,14 @@ void serve(const bool& isServing);
 void listenForCommand(bool& isServing);
 void listenForClient(kt::ServerSocket& server, const bool& isServing);
 void pollClient(const bool& isServing);
-void removeClient(std::pair<unsigned int, Client> client);
+void removeClient(const unsigned int& clientId, std::string msg = "");
 void shutdown();
 
 void createGame(const unsigned int& clientId, const std::string& name);
-void joinGame(const unsigned int& gameId, const unsigned int& clientId, const std::string& name);
+bool joinGame(const unsigned int& gameId, const unsigned int& clientId, const std::string& name);
 void processGameInstructions(const std::vector<std::string>&  clientMessage);
-void notifyByGame(const unsigned int& gameId, std::string msg);
+void notifyGame(const unsigned int& gameId, std::string msg);
+void notifyGame(const unsigned int& gameId, std::string msg, const unsigned int& originClient);
 void notifyClient(const unsigned int& clientId, std::string msg);
 unsigned int generateClientId(std::string ip, int port);
 std::vector<std::string> split(const std::string& original, const char& delim);
@@ -131,9 +125,7 @@ void shutdown()
 {
 	std::cout<<"STOPPING SERVER\n-------------------"<<std::endl;
 	if(!games.empty())
-	{
 		games.clear();
-	}
 
 	if(!clients.empty())
 	{
@@ -157,12 +149,9 @@ void listenForClient(kt::ServerSocket& server, const bool& isServing)
 			client.socket = kt::Socket(server.accept(POLL_TIME));
 			clients.insert( std::pair<unsigned int,Client>(generateClientId(client.socket.getAddress(), client.socket.getPort()), client));
 			std::cout<<" Client CONNECTED -  Clients connected: " << clients.size() << std::endl;
-		}
-		catch (const kt::TimeoutException &e)
-		{
-			//catch exception in order to cease thread block caused by server.accept(), and force isServing to be re-evaluated
+		} //catch exception in order to cease thread block caused by server.accept(), and force isServing to be re-evaluated
+		catch (const kt::TimeoutException &e){} 
 
-		} 
 	}
 } 
 
@@ -176,10 +165,10 @@ void pollClient(const bool& isServing)
 		{
 			for(auto& client: clients)
 			{
-				if(!client.second.socket.send("a\n")  )
+				if(!client.second.socket.send("a\n"))
 				{
 					client.second.m.lock();
-					removeClient(client);
+					removeClient(client.first);
 					std::cout<<" Client DISSCONNECTED - Clients Connected:: " << clients.size() << std::endl;
 				}
 			}
@@ -187,15 +176,29 @@ void pollClient(const bool& isServing)
 	}
 }
 
-void removeClient(std::pair<unsigned int, Client> client)
+void removeClient(const unsigned int& clientId, std::string msg)
 {
-	if(client.second.hasGame)
+	Client* clientRemoving = &clients[clientId];
+	if(msg != "") {notifyClient(clientId, msg);}
+
+	//Remove client from game if in one
+	if(clientRemoving->hasGame)
 	{
-		notifyByGame(client.second.gameId,"d, " + games[client.second.gameId]->getPlayer(client.first)->getName());
-		games[client.second.gameId]->removePlayer(client.first); 
+		int gameId = clientRemoving->gameId;
+		games[gameId]->removePlayer(clientId); 
+
+		//Remove game if no players are connected to it
+		if(games[gameId]->getPartySize() == 0)
+		{
+			games.erase(gameId);
+		}
+		else //Notify  remaining players of party change
+		{
+			notifyGame(gameId, "d," + std::to_string(clientId));
+		}
 	}
-	clients.erase(client.first);
-	client.second.socket.close();
+	clientRemoving->socket.close();
+	clients.erase(clientId);
 }
 
 /* Main serving function running on main thread */
@@ -211,7 +214,6 @@ void serve(const bool& isServing)
 				std::string recieved = client.second.socket.receiveToDelimiter(READ_DELIM);
 				if(recieved[0] == '\0') return;
 				std::vector<std::string> clientMessage = split(recieved,',');
-
 				switch (clientMessage[0][0])
 				{
 					case 'n': //New Game, game object needs to be created
@@ -223,12 +225,20 @@ void serve(const bool& isServing)
 						
 					case 'j': //Joining  Game, id from existing game needs to be accepted
 						gameId = (unsigned int)std::stoi(clientMessage[2]);
-						joinGame(gameId, client.first, clientMessage[1]);
-						client.second.hasGame = true;
-						client.second.gameId = gameId;
+						if(joinGame(gameId, client.first, clientMessage[1]))
+						{
+							client.second.hasGame = true;
+							client.second.gameId = gameId;
+							notifyClient(client.first, "j,"+ std::to_string(client.first));
+						}
+						else
+						{
+							removeClient(client.first, "game id was invalid or game is full");
+						}
 						break;
 
 					case 'i': //Client is in game, and instructions relate to a particualr state of the game 
+						std::cout << "FROM CLIENT:" << recieved << std::endl;
 						processGameInstructions(clientMessage);
 						break;
 
@@ -252,12 +262,20 @@ void serve(const bool& isServing)
 /*********************************************************** 
 				CLIENT SEND FUNCTIONS
 ************************************************************/
-void notifyByGame(const unsigned int& gameId, std::string msg)
+//Sends to all connected player clients for a given game
+void notifyGame(const unsigned int& gameId, std::string msg)
 {
-	//std::vector<std::unique_ptr<RPA::Player> > connectedPlayers = &games[gameId]->getAllPlayers();
+	for(auto& players: games[gameId]->getAllPlayers())
+		clients[players->getClientId()].socket.send(msg+"\n");
+}
+
+//Overload - Disregards sending message to origin client 
+void notifyGame(const unsigned int& gameId, std::string msg, const unsigned int& originClient)
+{
 	for(auto& players: games[gameId]->getAllPlayers())
 	{
-		clients[players->getClientId()].socket.send(msg+"\n");
+		if(originClient != players->getClientId())
+			clients[players->getClientId()].socket.send(msg+"\n");
 	}
 }
 
@@ -273,30 +291,26 @@ void createGame(const unsigned int& client, const std::string& name)
 {
 	auto game = std::make_unique<RPA::Game>(client, name);
 	games.insert(std::pair<unsigned int, std::unique_ptr<RPA::Game> >(client, std::move(game))); 
-	notifyByGame(game->getId(), "c," + name); //TO-DO - fix test message
+	notifyClient(client, "g," + std::to_string(client)); //send game id back to client who created game
 }
 
-void joinGame(const unsigned int& gameId, const unsigned int& clientId, const std::string& name)
+bool joinGame(const unsigned int& gameId, const unsigned int& clientId, const std::string& name)
 {
 	std::cout << " * Join gamed selected" << std::endl;
-	std::map<unsigned int, std::unique_ptr<RPA::Game> >::iterator mapIterator;
-	mapIterator = games.find(gameId);
-	if(mapIterator == games.end()) 
+	if(!games.empty())
 	{
-		notifyClient(clientId,"Game ID was not valid");
-	}	
-	else
-	{
-		if(games[gameId]->addPlayer(clientId, name))
+		std::map<unsigned int, std::unique_ptr<RPA::Game> >::iterator mapIterator;
+		mapIterator = games.find(gameId);
+		if(mapIterator != games.end()) 
 		{
-			notifyByGame(gameId, "c," + name);
-		}
-		else
-		{
-			notifyClient(clientId,"game full");
-			removeClient(std::pair<unsigned int, Client>(clientId, clients[clientId]));
+			if(games[gameId]->addPlayer(clientId, name))
+			{
+				notifyGame(gameId, "c," + name + "," + std::to_string(clientId), clientId);
+				return true;
+			}
 		}
 	}
+	return false;
 }
 
 void processGameInstructions(const std::vector<std::string>& clientMessage)
@@ -305,9 +319,10 @@ void processGameInstructions(const std::vector<std::string>& clientMessage)
 	// 0 = server instruction
 	// 1 = gameId
 	// 2 = state manager instruction
-	// 3 + =  state instruction
+	// 3 = origin client id
+	// 4+ =  state instruction
 	std::string serverReply = games[gameId]->processInstruction(clientMessage);
-	notifyByGame(gameId,serverReply);
+	notifyGame(gameId,serverReply, (unsigned int)std::stoi(clientMessage[3]));
 
 }
 
@@ -318,7 +333,6 @@ static int temp = 0; //REMEMBER TO NOT FORGET ABOUT this
 /* Generates a hashed ID of the client IP and Port*/
 unsigned int generateClientId(std::string ip, int port)
 {
-
 	//std::hash<std::string> hasher;
 	std::string result = "";
 	for(char c: ip)

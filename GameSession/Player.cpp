@@ -10,9 +10,9 @@ namespace RPA
         this->partyId = partyId;
     }
 
-    char Player::getClass() const
+    unsigned int Player::getClass() const
     {
-        return 'x';
+        return this->playerClass;
     }
 
     unsigned int Player::getClientId() const
@@ -30,9 +30,9 @@ namespace RPA
         return this->name;
     }
 
-    void Player::setClass(const char& _class) 
+    void Player::setClass(const unsigned int& _class) 
     {
-        //this->playerClass = _class;
+        this->playerClass = _class;
     }
 
     void Player::setName(const std::string& newName)

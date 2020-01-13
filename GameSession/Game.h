@@ -2,10 +2,9 @@
 #include <vector>
 #include <utility>
 #include <memory>
+
 #include "Player.h"
 #include "GameStates/StateManager.h"
-
-
 
 namespace RPA
 {
@@ -21,6 +20,7 @@ namespace RPA
 
         private:
          void resize(unsigned int&);
+         void updatePlayerData();
 
         public:
             Game();

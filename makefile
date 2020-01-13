@@ -11,7 +11,7 @@ CharacterCreation.o:	GameSession/GameStates/CharacterCreation.cpp GameSession/Ga
 	$(CC) $(PREFLAGS) -c GameSession/GameStates/CharacterCreation.cpp $(POSTFLAGS)
 
 StateManager.o:	GameSession/GameStates/StateManager.cpp GameSession/GameStates/StateManager.h
-	$(CC) $(PREFLAGS) -c GameSession/GameStates/StateManager.cpp $(POSTFLAGS)
+	$(CC) $(PREFLAGS) -c Game.o GameSession/GameStates/StateManager.cpp $(POSTFLAGS)
 
 Game.o:	GameSession/Game.cpp GameSession/Game.h
 	$(CC) $(PREFLAGS) -c GameSession/Game.cpp $(POSTFLAGS)

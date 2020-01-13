@@ -16,6 +16,5 @@ namespace RPA
             virtual ~GameState(){}
             virtual std::string getClientMessage() = 0;
             virtual void processInstruction(const std::vector<std::unique_ptr<RPA::Player> >&, const std::vector<std::string>&) = 0; 
-
     };
 }

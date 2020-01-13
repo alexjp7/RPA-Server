@@ -42,7 +42,9 @@ namespace RPA
                 playerBeingRemoved = i;
             }
         }
-        resize(playerBeingRemoved);
+        //Handle if no players in game, delete it.
+        if(this->players.size() > 1) 
+            resize(playerBeingRemoved); 
     }
 
     //Removes dissconected player while maintaining contiguous array
@@ -50,9 +52,10 @@ namespace RPA
     {
         if(removedIndex > 0) //TO-DO check index out of bounds
         {
-            std::swap(this->players[removedIndex], this->players[this->players.size()]);
+            std::swap(this->players[removedIndex], this->players[this->players.size() - 1]);
         }
         this->players.erase(this->players.end());
+        std::cout << "Players in Game" << this->gameId << " : " << this->players.size()<< std::endl;
     }
 
     //Returns player specified by their client Id
@@ -88,10 +91,10 @@ namespace RPA
         }
         else if(instruction[2] == "p")  //p == process instruction of the state in progress
         {
-            this->stateManager->getCurrentState()->processInstruction(this->players, instruction);
+           this->stateManager->getCurrentState()->processInstruction(this->players, instruction);
 
         }
-        return this->stateManager->getCurrentState()->getClientMessage();
+        return this->stateManager->getCurrentState()->getClientMessage();   
     }
     
 
