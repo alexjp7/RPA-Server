@@ -6,22 +6,24 @@ namespace RPA
     class Player
     {
         private:
+            bool ready;
             std::string name;
             unsigned int goldCoins;
-            unsigned int playerClass;
+            int adventuringClass;
             unsigned int clientId;
-            unsigned int partyId;
 
         public:
-            Player(const unsigned int&, const std::string&, const unsigned int&);
+            Player(const unsigned int&, const std::string&);
             ~Player();
             
             std::string getName() const;
-            unsigned int getClass() const;
+            int getClass() const;
+            bool isReady() const;
             unsigned int getClientId() const;
-            unsigned int getPartyId() const;
 
             void setClass(const unsigned int&);
             void setName(const std::string&);
+            void toggleReady();
+            std::string toDelimitedString();
     };
 }

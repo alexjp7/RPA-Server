@@ -21,7 +21,7 @@ namespace RPA
     bool Game::addPlayer(const unsigned int& playerId, const std::string& name)
     {
         if(this->players.size() == PARTY_LIMIT) {return false;}
-        auto player = std::make_unique<Player>(playerId, name, this->players.size());
+        auto player = std::make_unique<Player>(playerId, name);
         this->players.push_back(std::move(player));
         return true;
     }
@@ -50,12 +50,11 @@ namespace RPA
     //Removes dissconected player while maintaining contiguous array
     void Game::resize(unsigned int& removedIndex)
     {
-        if(removedIndex > 0) //TO-DO check index out of bounds
+        if(removedIndex != this->players.size() - 1) //TO-DO check index out of bounds
         {
             std::swap(this->players[removedIndex], this->players[this->players.size() - 1]);
         }
         this->players.erase(this->players.end());
-        std::cout << "Players in Game" << this->gameId << " : " << this->players.size()<< std::endl;
     }
 
     //Returns player specified by their client Id
@@ -75,6 +74,20 @@ namespace RPA
     std::vector<std::unique_ptr<Player> > const& Game::getAllPlayers() const
     {
         return this->players;
+    }
+
+    std::string Game::getPartyFormattedString()
+    {
+        std::string result;
+        //Format | after each player, but not last (helps with client side string split)
+        for(unsigned int i = 0; i < this->players.size(); i++)
+        {
+            if(i != this->players.size() -1)
+                result += this->players[i]->toDelimitedString() + "|";
+            else
+                result += this->players[i]->toDelimitedString();
+        }
+        return result;
     }
 
     unsigned int Game::getPartySize() const

@@ -22,10 +22,11 @@ namespace RPA
         {
             case 'c':  //class change, client who changed, class changed too
                 this->returnedClientMessage = "i,c," + instruction[3] + "," + instruction[5];
-                //Update player class server side
-                this->getPlayer(players,  (unsigned int)std::stoi(instruction[3]))->setClass(std::stoi(instruction[5]));
+                this->getPlayer(players,  (unsigned int)std::stoi(instruction[3]) )->setClass(std::stoi(instruction[5]));
                 break;
-            
+            case 'r':
+                this->returnedClientMessage = "i,r," + instruction[3];
+                this->getPlayer(players, (unsigned int)std::stoi(instruction[3])  )->toggleReady();
             default:
                 break;
         }

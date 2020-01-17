@@ -33,6 +33,7 @@ namespace RPA
 
             unsigned int getId() const;
             unsigned int getPartySize() const;
+            std::string getPartyFormattedString();
             std::unique_ptr<Player> const& getPlayer(const unsigned int&) const;
             std::vector<std::unique_ptr<Player> >  const& getAllPlayers() const;
 

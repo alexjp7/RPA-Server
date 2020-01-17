@@ -227,9 +227,11 @@ void serve(const bool& isServing)
 						gameId = (unsigned int)std::stoi(clientMessage[2]);
 						if(joinGame(gameId, client.first, clientMessage[1]))
 						{
+							std::string message =  "g," + std::to_string(client.first) + "," + games[gameId]->getPartyFormattedString();
 							client.second.hasGame = true;
 							client.second.gameId = gameId;
-							notifyClient(client.first, "j,"+ std::to_string(client.first));
+							notifyClient(client.first, message);
+							notifyGame(gameId, "c," + clientMessage[1] + "," + std::to_string(client.first), client.first);
 						}
 						else
 						{
@@ -304,10 +306,7 @@ bool joinGame(const unsigned int& gameId, const unsigned int& clientId, const st
 		if(mapIterator != games.end()) 
 		{
 			if(games[gameId]->addPlayer(clientId, name))
-			{
-				notifyGame(gameId, "c," + name + "," + std::to_string(clientId), clientId);
 				return true;
-			}
 		}
 	}
 	return false;
@@ -322,6 +321,7 @@ void processGameInstructions(const std::vector<std::string>& clientMessage)
 	// 3 = origin client id
 	// 4+ =  state instruction
 	std::string serverReply = games[gameId]->processInstruction(clientMessage);
+	std::cout << "serverReply: "<< serverReply << std::endl;
 	notifyGame(gameId,serverReply, (unsigned int)std::stoi(clientMessage[3]));
 
 }
