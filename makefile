@@ -8,28 +8,28 @@ RPA:	main.o Server.o ClientController.o Server/Server.h Server/ClientController.
 Player.o GameSession/Player.h Game.o GameSession/Game.h\
 StateManager.o CharacterCreation.o\
 Cpp-SocketLibrary/Socket.o Cpp-SocketLibrary/Socket/Socket.h Cpp-SocketLibrary/ServerSocket.o Cpp-SocketLibrary/ServerSocket/ServerSocket.h
-	$(CC) $(PREFLAGS) main.o Server.o ClientController.o Player.o Game.o StateManager.o CharacterCreation.o Cpp-SocketLibrary/ServerSocket.o Cpp-SocketLibrary/Socket.o -o server $(POSTFLAGS)
+	$(CC) $(PREFLAGS) bin/main.o bin/Server.o bin/ClientController.o bin/Player.o bin/Game.o bin/StateManager.o bin/CharacterCreation.o Cpp-SocketLibrary/ServerSocket.o Cpp-SocketLibrary/Socket.o -o server $(POSTFLAGS)
 
 main.o:	main.cpp Server/Server.h
-	$(CC) $(PREFLAGS) -c  main.cpp $(POSTFLAGS)
+	$(CC) $(PREFLAGS) -c  main.cpp -o bin/main.o $(POSTFLAGS)
 
 Server.o:	Server/Server.cpp Server/Server.h
-	$(CC) $(PREFLAGS) -c Server/Server.cpp $(POSTFLAGS)
+	$(CC) $(PREFLAGS) -c Server/Server.cpp -o bin/Server.o $(POSTFLAGS)
 
 ClientController.o: Server/ClientController.cpp Server/ClientController.h
-	$(CC) $(PREFLAGS) -c Server/ClientController.cpp $(POSTFLAGS)
+	$(CC) $(PREFLAGS) -c Server/ClientController.cpp -o bin/ClientController.o $(POSTFLAGS)
 	
 CharacterCreation.o:	GameSession/GameStates/CharacterCreation.cpp GameSession/GameStates/CharacterCreation.h GameSession/GameStates/GameState.h
-	$(CC) $(PREFLAGS) -c GameSession/GameStates/CharacterCreation.cpp $(POSTFLAGS)
+	$(CC) $(PREFLAGS) -c GameSession/GameStates/CharacterCreation.cpp -o bin/CharacterCreation.o $(POSTFLAGS)
 
 StateManager.o:	GameSession/GameStates/StateManager.cpp GameSession/GameStates/StateManager.h
-	$(CC) $(PREFLAGS) -c Game.o GameSession/GameStates/StateManager.cpp $(POSTFLAGS)
+	$(CC) $(PREFLAGS) -c GameSession/GameStates/StateManager.cpp -o bin/StateManager.o $(POSTFLAGS)
 
 Game.o:	GameSession/Game.cpp GameSession/Game.h
-	$(CC) $(PREFLAGS) -c GameSession/Game.cpp $(POSTFLAGS)
+	$(CC) $(PREFLAGS) -c GameSession/Game.cpp -o bin/Game.o $(POSTFLAGS)
 
 Player.o:	GameSession/Player.cpp GameSession/Player.h
-	$(CC) $(PREFLAGS) -c GameSession/Player.cpp $(POSTFLAGS)
+	$(CC) $(PREFLAGS) -c GameSession/Player.cpp -o bin/Player.o $(POSTFLAGS)
 
 #Only need to run once
 libs:
@@ -37,8 +37,9 @@ libs:
 	chmod -R 775 Cpp-SocketLibrary
 	sudo Cpp-SocketLibrary/dependencies.sh
 	make -C Cpp-SocketLibrary
+	mkdir bin
 
 clean:
-	rm *.o
+	rm bin/*.o
 
 rebuild: clean RPA
