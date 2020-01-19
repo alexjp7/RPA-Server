@@ -15,10 +15,10 @@
 #include <signal.h>
 
 //Socket Library
-#include "../Cpp-SocketLibrary/ServerSocket/ServerSocket.h"
-#include "../Cpp-SocketLibrary/SocketExceptions/SocketException.hpp"
-#include "../Cpp-SocketLibrary/SocketExceptions/BindingException.hpp"
-#include "../Cpp-SocketLibrary/SocketExceptions/TimeoutException.hpp"
+#include "ServerSocket/ServerSocket.h"
+#include "SocketExceptions/SocketException.hpp"
+#include "SocketExceptions/BindingException.hpp"
+#include "SocketExceptions/TimeoutException.hpp"
 
 //Server objects
 #include "ClientController.h"

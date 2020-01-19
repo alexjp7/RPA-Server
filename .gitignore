@@ -6,4 +6,5 @@ server
 #dependancies
 Cpp-SocketLibrary
 #object folder
-bin
+/build
+/build-*
