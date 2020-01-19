@@ -1,4 +1,5 @@
 *.o
-SocketLibrary
-server
 *.sh
+*.h.gch
+Cpp-SocketLibrary
+server

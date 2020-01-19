@@ -7,10 +7,10 @@
 #include <iostream>
 #include <thread>
 
-#include "../SocketLibrary/ServerSocket/ServerSocket.h"
-#include "../SocketLibrary/SocketExceptions/SocketException.hpp"
-#include "../SocketLibrary/SocketExceptions/BindingException.hpp"
-#include "../SocketLibrary/SocketExceptions/TimeoutException.hpp"
+#include "../Cpp-SocketLibrary/ServerSocket/ServerSocket.h"
+#include "../Cpp-SocketLibrary/SocketExceptions/SocketException.hpp"
+#include "../Cpp-SocketLibrary/SocketExceptions/BindingException.hpp"
+#include "../Cpp-SocketLibrary/SocketExceptions/TimeoutException.hpp"
 
 #include "../GameSession/Player.h"
 #include "../GameSession/Game.h"
