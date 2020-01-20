@@ -2,6 +2,7 @@
 #include <vector>
 #include <utility>
 #include <memory>
+#include <typeinfo> 
 
 #include "Player.h"
 #include "GameStates/StateManager.h"
@@ -17,7 +18,6 @@ namespace RPA
             std::vector<std::unique_ptr<Player> > players;
             std::unique_ptr<StateManager> stateManager;
 
-
         private:
          void resize(unsigned int&);
          void updatePlayerData();
@@ -30,14 +30,11 @@ namespace RPA
             void removePlayer(const unsigned int&);
 
             std::string processInstruction(const std::vector<std::string>&);
-
-            unsigned int getId() const;
+            std::string getCurrentStateId();
+            const unsigned int getId() const;
             unsigned int getPartySize() const;
             std::string getPartyFormattedString();
             std::unique_ptr<Player> const& getPlayer(const unsigned int&) const;
             std::vector<std::unique_ptr<Player> >  const& getAllPlayers() const;
-
-            
-
     };
 }

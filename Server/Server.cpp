@@ -11,7 +11,7 @@ namespace RPA
     //Intialises client listener threads and begins serving
     void Server::start()
     {
-        std::cout<<"STARTING SERVER\n-------------------"<<std::endl;
+        std::cout<<"STARTING SERVER..."<<std::endl;
         this->isServing = true;
         try
         {	//Initialize Server Socket, client listener and client poller threads
@@ -38,24 +38,34 @@ namespace RPA
     //Allows for commands to be given to server via command line
     void Server::listenForCommand() //To-do - come up with a more useful data/server instructions
     {
+        std::cout << " (-s) Shutdown \n (-c) Clients \n (-g) Games" << std::endl;
         std::string instruction;
         while (this->isServing)
         {
             std::cin>>instruction;
-            if(instruction == "shutdown")
-            {	
-                this->isServing = false;
-            }
-            else if(instruction == "clients")
+            std::cout << "----------------------\n";
+            if(instruction[0] == '-')
             {
-                this->printClients();
+                switch (instruction[1])
+                {
+                    case 's':
+                        this->isServing = false;
+                        break;
+                    case 'c':
+                        this->printClients();
+                        break;
+                    case 'g':
+                        this->printGames();
+                        break;
+                    default:
+                        std::cout << "Unknown Command - " << instruction << std::endl;
+                        break;
+                }
             }
-            else if(instruction == "games")
-            {
-                this->printGames();
+            else std::cout << "Valid Comamnds: (-s) Shutdown \n (-c) Clients \n (-g) Games" << std::endl;
+            
+
             }
-            std::cout << "--------------------" << std::endl;
-        }
     }
 
     /* Main serving function running on main thread */
@@ -83,7 +93,7 @@ namespace RPA
                             gameId = (unsigned int)std::stoi(clientMessage[2]);
                             if(joinGame(gameId, client.first, clientMessage[1]))
                             {
-                                std::string message =  "g," + std::to_string(client.first) + "," + games[gameId]->getPartyFormattedString();
+                                std::string message = "g," + std::to_string(client.first) + "," + games[gameId]->getPartyFormattedString();
                                 client.second.hasGame = true;
                                 client.second.gameId = gameId;
                                 clientController.notifyClient(client.first, message);
@@ -173,7 +183,7 @@ namespace RPA
 
     void Server::shutdown()
     {
-        std::cout<<"STOPPING SERVER\n-------------------"<<std::endl;
+        std::cout<<"STOPPING SERVER.."<<std::endl;
 
         commandListener->join();
         clientListener->join();
@@ -197,14 +207,49 @@ namespace RPA
     //prints a list of client IDs to CL
     void Server::printClients()
     {
-        if(!clientController.hasClients()) {std::cout<<"No Clients Connected" << std::endl; return;}
         std::cout << clientController.getClients().size() << " client/s connected" << std::endl;
     }
-    //prints a list of client IDs to CL
+    //prints a list of Game IDs to CL
     void Server::printGames()
     {
-        if(this->games.empty()) {std::cout<<"No Games In Progress" << std::endl; return;}
+
         std::cout << this->games.size() << " game/s in progress" << std::endl;
+        if(this->games.size() == 0) return;
+        std::cout << "----------------------\nGames List\n";
+        for(auto& g: games)
+        {
+            std::cout<<"Game ID: " << g.second->getId() << " \n";
+        }
+
+        std::string instruction;
+        std::cout << "\nEnter Game ID for Details or Enter d to return: ";
+        std::cin >> instruction;
+        std::cout << "----------------------\n";
+
+        if(instruction[0] != 'd') 
+        {
+            try
+            {
+                unsigned int gameId = std::stoi(instruction);
+
+                std::map<unsigned int, std::unique_ptr<RPA::Game> >::iterator mapIterator;
+                mapIterator = games.find(gameId);
+                if(mapIterator == games.end())
+                {
+                    std::cout << "Invalid Game Id" << std::endl;
+                } 
+                else
+                {
+                    std::cout << "Current State: " << games[gameId]->getCurrentStateId() << "\nPlayers Connected " << games[gameId]->getPartySize() << std::endl;
+                }
+            }
+            catch(std::invalid_argument& e)
+            {
+                std::cerr << "Game IDs MUST be integers" << std::endl;
+            }
+
+        }
+        std::cout<< "Returning to server main menu..." << std::endl;
     }
 
     Server::~Server()
