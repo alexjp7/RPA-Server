@@ -1,7 +1,7 @@
 #pragma once
-#include "GameState.h"
-
 #include <memory>
+
+#include "GameState.h"
 namespace RPA
 {
     class CharacterCreation: public GameState

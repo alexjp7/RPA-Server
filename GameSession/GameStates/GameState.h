@@ -11,7 +11,6 @@ namespace RPA
     {
         protected:
             std::string returnedClientMessage;
-
         public:
             virtual ~GameState(){}
             virtual std::string getClientMessage() = 0;

@@ -26,10 +26,7 @@ namespace RPA
         return true;
     }
 
-    unsigned int Game::getId() const
-    {
-        return this->gameId;
-    }
+
 
     //Remove client from game - typically called upon dissconection
     void Game::removePlayer(const unsigned int& playerId)
@@ -43,14 +40,13 @@ namespace RPA
             }
         }
         //Handle if no players in game, delete it.
-        if(this->players.size() > 1) 
-            resize(playerBeingRemoved); 
+        resize(playerBeingRemoved); 
     }
 
     //Removes dissconected player while maintaining contiguous array
     void Game::resize(unsigned int& removedIndex)
     {
-        if(removedIndex != this->players.size() - 1) //TO-DO check index out of bounds
+        if(removedIndex != this->players.size() - 1 && removedIndex != 0) //TO-DO check index out of bounds
         {
             std::swap(this->players[removedIndex], this->players[this->players.size() - 1]);
         }
@@ -69,7 +65,11 @@ namespace RPA
         }
         return nullptr;
     }
-
+    
+    const unsigned int Game::getId() const
+    {
+        return this->gameId;
+    }
     //returns all players conencted to a game
     std::vector<std::unique_ptr<Player> > const& Game::getAllPlayers() const
     {
@@ -109,7 +109,10 @@ namespace RPA
         }
         return this->stateManager->getCurrentState()->getClientMessage();   
     }
-    
+    std::string Game::getCurrentStateId()
+    {
+        return typeid(*(this->stateManager->getCurrentState())).name();
+    }
 
     Game::~Game()
     {
