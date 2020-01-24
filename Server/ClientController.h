@@ -46,7 +46,8 @@ namespace RPA
             //Client communication 
             void notifyGame(const unsigned int& gameId, std::string msg, std::map<unsigned int, std::unique_ptr<RPA::Game> >& games);
             void notifyGame(const unsigned int& gameId, std::string msg, const unsigned int& originClient,  std::map<unsigned int, std::unique_ptr<RPA::Game> >& games);
-            void notifyClient(const unsigned int& clientId, std::string msg);
+            void notifyClient(const unsigned int& clientId, const std::string& msg);
+            void setGameStatus(const unsigned int& clientId, const unsigned int& gameId, const std::string& msg);
             void removeClient(const unsigned int& clientId, std::map<unsigned int, std::unique_ptr<RPA::Game> >&  games, std::string msg = "");
 
         private:

@@ -73,9 +73,16 @@ namespace RPA
 		}
 	}
 
-	void ClientController::notifyClient(const unsigned int& clientId, std::string msg)
+	void ClientController::notifyClient(const unsigned int& clientId, const std::string& msg)
 	{
 		clients[clientId].socket.send(msg+"\n");
+	}
+
+	void ClientController::setGameStatus(const unsigned int& clientId, const unsigned& gameId, const std::string& msg )
+	{
+		clients[clientId].hasGame = true;
+		clients[clientId].gameId = gameId;
+		this->notifyClient(clientId, msg); //send game id back to client who created game
 	}
 
 	static int temp = 0; //FOR TESTING
@@ -92,6 +99,7 @@ namespace RPA
 		result += port;
 		return ++temp;
 	}
+	
 	
 	bool ClientController::hasClients() const {return !this->clients.empty();}
 	std::map<unsigned int, Client>& ClientController::getClients()  {return this->clients;}

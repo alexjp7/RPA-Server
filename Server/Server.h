@@ -13,19 +13,24 @@
 #include <functional>
 #include <string>
 #include <signal.h>
-
+//Json Library
+#include <nlohmann/json.hpp>
 //Socket Library
 #include "ServerSocket/ServerSocket.h"
 #include "SocketExceptions/SocketException.hpp"
 #include "SocketExceptions/BindingException.hpp"
 #include "SocketExceptions/TimeoutException.hpp"
-
 //Server objects
 #include "ClientController.h"
-
 //Game Objects
+#include "../Enums/State.cpp"
 #include "../GameSession/Game.h"
 #include "../GameSession/Player.h"
+//Message Types
+#include "MessageTypes/Message.h"
+#include "MessageTypes/ConnectionMessage.h"
+
+using json = nlohmann::json;
 
 
 namespace RPA
