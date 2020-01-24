@@ -50,7 +50,7 @@ namespace RPA
                     {   //inbound and outbound messages between client and server
                         RPA::ConnectionMessage clientMessage(recieved);
 
-                        if(clientMessage.getGameId() .== -1) 
+                        if(clientMessage.getGameId() == -1) 
                             createGame(client.first, clientMessage.getClientName());
                         else
                             if(!joinGame(clientMessage.getGameId(), client.first, clientMessage.getClientName()) )
