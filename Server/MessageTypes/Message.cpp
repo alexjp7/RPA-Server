@@ -2,6 +2,14 @@
 
 namespace RPA
 {
+    Message::Message()
+    {
+        this->stateId = -1;
+        this->gameId = -1;
+        this->clientId = -1;
+        this->message = "";
+    }
+
     Message::Message(const std::string& message)
     {
         this->stateId = -1;

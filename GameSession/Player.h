@@ -1,5 +1,9 @@
 #pragma once
 #include <string>
+#include <nlohmann/json.hpp>
+
+using json = nlohmann::json;
+
 namespace RPA
 {
     enum ADVENTURING_CLASS {WARRIOR = 0, WIZARD, ROGUE, CLERIC};
@@ -25,5 +29,7 @@ namespace RPA
             void setName(const std::string&);
             void toggleReady();
             std::string toDelimitedString();
+            
     };
+    void to_json(json& j, const std::unique_ptr<Player>& p);
 }

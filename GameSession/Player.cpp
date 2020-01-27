@@ -50,9 +50,13 @@ namespace RPA
         return std::to_string(this->clientId) + ":" + this->name + ":" + std::to_string(this->adventuringClass) + ":" + std::to_string(this->ready);
     }
 
-
     Player::~Player()
     {
         
+    }
+
+    void to_json(json& j, const std::unique_ptr<Player>& p)
+    {
+        j = json{{"id", p->getClientId()},{"name", p->getName()}, {"adventuringClass", p->getClass()}, {"ready",p->isReady()}};
     }
 }

@@ -8,6 +8,7 @@ namespace RPA
         serverSocket = kt::ServerSocket(kt::SocketType::Wifi, this->PORT);
         
     }
+    
     //Intialises client listener threads and begins serving
     void Server::start()
     {
@@ -49,12 +50,23 @@ namespace RPA
                     if(!client.second.hasGame)
                     {   //inbound and outbound messages between client and server
                         RPA::ConnectionMessage clientMessage(recieved);
-
-                        if(clientMessage.getGameId() == -1) 
+                        //Player Creating Game
+                        if( clientMessage.getGameId() == -1) 
+                        {
                             createGame(client.first, clientMessage.getClientName());
-                        else
-                            if(!joinGame(clientMessage.getGameId(), client.first, clientMessage.getClientName()) )
+                            RPA::ConnectionMessage serverMessage(0, client.first, client.first, clientMessage.getClientName(), games[client.first]->getAllPlayers());
+                            clientController.setGameStatus(client.first, client.first, serverMessage.getMessage());
+                        }
+                        else // Player Joining Game
+                            if(joinGame(clientMessage.getGameId(), client.first, clientMessage.getClientName()) )
+                            {
+                                RPA::ConnectionMessage serverMessage(0,clientMessage.getGameId(), client.first, clientMessage.getClientName(), games[clientMessage.getGameId()]->getAllPlayers());
+                                clientController.setGameStatus(client.first, clientMessage.getGameId(), serverMessage.getMessage());
+                            }
+                            else
+                            {
                                 clientController.removeClient(client.first, games,"game id was invalid or game is full");
+                            }
                     }
                     else //Process Message Of in-progress game
                     {
@@ -75,15 +87,12 @@ namespace RPA
 
     void Server::createGame(const unsigned int& clientId, const std::string& name)
     {
-        RPA::ConnectionMessage serverMessage(0, clientId,clientId, name);
         auto game = std::make_unique<RPA::Game>(clientId, name);
         games.insert(std::pair<unsigned int, std::unique_ptr<RPA::Game> >(clientId, std::move(game)));
-        clientController.setGameStatus(clientId, clientId, serverMessage.getMessage());
     }
 
     bool Server::joinGame(const unsigned int& gameId, const unsigned int& clientId, const std::string& name)
     {
-        RPA::ConnectionMessage serverMessage(0, clientId, gameId, name);
         if(!games.empty())
         {
             std::map<unsigned int, std::unique_ptr<RPA::Game> >::iterator mapIterator;
@@ -92,7 +101,7 @@ namespace RPA
             {
                 if(games[gameId]->addPlayer(clientId, name))
                 {
-                    clientController.setGameStatus(clientId, gameId, serverMessage.getMessage());
+
                     return true;
                 }
             }
@@ -140,9 +149,7 @@ namespace RPA
         clientListener->join();
         clientPollThread->join();
 
-        if(!games.empty())
-            games.clear();
-
+        if(!games.empty()) games.clear();
         if(!clientController.hasClients())
         {
             for(auto& client: clientController.getClients())
@@ -191,6 +198,7 @@ namespace RPA
     {
         std::cout << clientController.getClients().size() << " client/s connected" << std::endl;
     }
+
     //prints a list of Game IDs to CL
     void Server::printGames()
     {
@@ -229,7 +237,6 @@ namespace RPA
             {
                 std::cerr << "Game IDs MUST be integers" << std::endl;
             }
-
         }
         std::cout<< "Returning to server main menu..." << std::endl;
     }

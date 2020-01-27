@@ -100,7 +100,6 @@ namespace RPA
 		return ++temp;
 	}
 	
-	
 	bool ClientController::hasClients() const {return !this->clients.empty();}
 	std::map<unsigned int, Client>& ClientController::getClients()  {return this->clients;}
 
