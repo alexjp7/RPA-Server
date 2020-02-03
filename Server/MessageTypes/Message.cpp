@@ -4,29 +4,31 @@ namespace RPA
 {
     Message::Message()
     {
-        this->stateId = -1;
         this->gameId = -1;
         this->clientId = -1;
-        this->message = "";
+        this->clientMessage = "";
+        this->gameMessage = "";
     }
 
     Message::Message(const std::string& message)
     {
-        this->stateId = -1;
         this->gameId = -1;
         this->clientId = -1;
-        this->message = "";
-
+        this->clientMessage = "";
+        this->gameMessage = "";
     }
     
-    Message:: Message(const int& _stateId, const int& _gameId, const int& _clientId)
+    Message:: Message(const int& _gameId, const int& _clientId)
     {
-        this->stateId = _stateId;
         this->gameId = _gameId;
         this->clientId = _clientId;
-        this->message = "";
+        this->clientMessage = "";
+        this->gameMessage = "";
     }
 
-    int Message::getStateId() const {return this->stateId;}
+    std::string& Message::getClientMessage() { return this->clientMessage;}
+    std::string& Message::getGameMessage() { return this->gameMessage;}
+    RPA::State Message::getStateId() const {return this->stateId;}
     int Message::getGameId()  const {return this->gameId;}
+    int Message::getClientId()  const {return this->clientId;}
 }

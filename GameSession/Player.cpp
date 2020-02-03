@@ -11,50 +11,23 @@ namespace RPA
         this->ready = false;
     }
 
-    int Player::getClass() const
-    {
-        return this->adventuringClass;
-    }
+    //Client ID
+    unsigned int Player::getClientId() const { return this->clientId;}
+    //Player Name
+    std::string  Player::getName() const { return this->name;}
+    void Player::setName(const std::string& newName) { this->name = newName;}
+    //Client Class
+    int Player::getClass() const{ return this->adventuringClass;}
+    void Player::setClass(const unsigned int& _class) {this->adventuringClass = _class;}
+    //Ready Status 
+    bool Player::isReady() const{ return this->ready;}
+    void Player::toggleReady(){ this->ready = !this->ready;} 
+    Player::~Player() { }
 
-    unsigned int Player::getClientId() const
-    {
-        return this->clientId;
-    }
-
-    std::string  Player::getName() const
-    {
-        return this->name;
-    }
-
-    bool Player::isReady() const
-    {
-        return this->ready;
-    }
-
-    void Player::setClass(const unsigned int& _class) 
-    {
-        this->adventuringClass = _class;
-    }
-
-    void Player::setName(const std::string& newName)
-    {
-        this->name = newName;
-    }
-
-    void Player::toggleReady()
-    {
-        this->ready = !this->ready;
-    }
-    std::string Player::toDelimitedString()
-    {
-        return std::to_string(this->clientId) + ":" + this->name + ":" + std::to_string(this->adventuringClass) + ":" + std::to_string(this->ready);
-    }
-
-    Player::~Player()
-    {
-        
-    }
-
+    //For test prints
+    std::string Player::toDelimitedString() { return  json{{"id", this->getClientId()},{"name", this->getName()}, {"adventuringClass", this->getClass()}, {"ready",this->isReady()}}.dump();}
+  
+    //Overload for serialization method
     void to_json(json& j, const std::unique_ptr<Player>& p)
     {
         j = json{{"id", p->getClientId()},{"name", p->getName()}, {"adventuringClass", p->getClass()}, {"ready",p->isReady()}};

@@ -1,7 +1,6 @@
 #include <iostream>
 #include "Game.h"
 
-
 namespace RPA
 {
     Game::Game()
@@ -26,27 +25,28 @@ namespace RPA
         return true;
     }
 
-
-
     //Remove client from game - typically called upon dissconection
     void Game::removePlayer(const unsigned int& playerId)
     {
         unsigned int playerBeingRemoved = -1;
-        for (unsigned int i = 0; i < this->players.size(); i++)
+        if(this->players.size() == 1)
+              playerBeingRemoved = 0;
+        else
         {
-            if(this->players[i]->getClientId() == playerId)
+            for (unsigned int i = 0; i < this->players.size(); i++)
             {
-                playerBeingRemoved = i;
+                if(this->players[i]->getClientId() == playerId)
+                    playerBeingRemoved = i;
             }
         }
-        //Handle if no players in game, delete it.
         resize(playerBeingRemoved); 
     }
 
     //Removes dissconected player while maintaining contiguous array
     void Game::resize(unsigned int& removedIndex)
     {
-        if(removedIndex != this->players.size() - 1 && removedIndex != 0) //TO-DO check index out of bounds
+        if(removedIndex < 0 || removedIndex > 3) return; //Invalid player found
+        if(removedIndex != this->players.size() - 1 && this->players.size() > 1) 
         {
             std::swap(this->players[removedIndex], this->players[this->players.size() - 1]);
         }
@@ -66,52 +66,17 @@ namespace RPA
         return nullptr;
     }
     
-    const unsigned int Game::getId() const
+    std::string Game::recieveInstruction(const std::string& clientMessage)
     {
-        return this->gameId;
-    }
-    //returns all players conencted to a game
-    std::vector<std::unique_ptr<Player> > const& Game::getAllPlayers() const
-    {
-        return this->players;
+        this->stateManager->getCurrentState()->processInstruction(this->players, clientMessage);
+        return this->stateManager->getCurrentState()->getClientMessage();
     }
 
-    std::string Game::getPartyFormattedString()
+    //Test print out
+    void Game::printPlayers() const
     {
-        std::string result;
-        //Format | after each player, but not last (helps with client side string split)
-        for(unsigned int i = 0; i < this->players.size(); i++)
-        {
-            if(i != this->players.size() -1)
-                result += this->players[i]->toDelimitedString() + "|";
-            else
-                result += this->players[i]->toDelimitedString();
-        }
-        return result;
-    }
-
-    unsigned int Game::getPartySize() const
-    {
-        return this->players.size();
-    }
-
-    std::string Game::processInstruction(const std::vector<std::string>& instruction)
-    {
-    
-        if(instruction[2] == "c") //c == changed state
-        {
-            this->stateManager->processStateChange(instruction);
-        }
-        else if(instruction[2] == "p")  //p == process instruction of the state in progress
-        {
-           this->stateManager->getCurrentState()->processInstruction(this->players, instruction);
-
-        }
-        return this->stateManager->getCurrentState()->getClientMessage();   
-    }
-    std::string Game::getCurrentStateId()
-    {
-        return typeid(*(this->stateManager->getCurrentState())).name();
+        for(auto& p: this->players)
+            std:: cout << p->toDelimitedString() << std::endl;
     }
 
     Game::~Game()
@@ -119,7 +84,10 @@ namespace RPA
         (this->players).clear();
     }
 
+    const unsigned int Game::getId() const { return this->gameId;}
+    unsigned int Game::getPartySize() const { return this->players.size();}
+    std::vector<std::unique_ptr<Player> > const& Game::getAllPlayers() const{ return this->players;}
+    bool Game::hasOriginMessage() const { return this->stateManager->getCurrentState()->hasOriginMessage(); }
+    RPA::State Game::getStateId() const { this->stateManager->getCurrentState()->getStateId();}
+    std::string Game::getStateTypeId() const {return typeid(*(this->stateManager->getCurrentState())).name();}
 }
-
-
-

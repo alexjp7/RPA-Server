@@ -10,7 +10,7 @@ namespace RPA
     class StateManager
     {
         private:
-            std::vector<std::unique_ptr<GameState> > states;
+            std::vector<std::unique_ptr<RPA::GameState> > states;
             void addState();
             void removeState();
 
@@ -19,8 +19,6 @@ namespace RPA
             ~StateManager();
 
             std::unique_ptr<GameState> const& getCurrentState() const;
-            void processStateChange(const std::vector<std::string>&);
-            
     };
     
 } // namespace RPA

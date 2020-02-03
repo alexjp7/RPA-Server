@@ -49,28 +49,31 @@ namespace RPA
                     if(recieved[0] == '\0') return;
                     if(!client.second.hasGame)
                     {   //inbound and outbound messages between client and server
-                        RPA::ConnectionMessage clientMessage(recieved);
+                        RPA::ConnectionMessage inboundMessage(recieved);
                         //Player Creating Game
-                        if( clientMessage.getGameId() == -1) 
+                        if( inboundMessage.getGameId() == -1) 
                         {
-                            createGame(client.first, clientMessage.getClientName());
-                            RPA::ConnectionMessage serverMessage(0, client.first, client.first, clientMessage.getClientName(), games[client.first]->getAllPlayers());
-                            clientController.setGameStatus(client.first, client.first, serverMessage.getMessage());
+                            createGame(client.first, inboundMessage.getClientName());
+                            RPA::ConnectionMessage outboundMessage(client.first, client.first,State::CHARACTER_CREATION, inboundMessage.getClientName(), games[client.first]->getAllPlayers());
+                            clientController.setGameStatus(client.first, client.first, outboundMessage.getClientMessage());
                         }
                         else // Player Joining Game
-                            if(joinGame(clientMessage.getGameId(), client.first, clientMessage.getClientName()) )
-                            {
-                                RPA::ConnectionMessage serverMessage(0,clientMessage.getGameId(), client.first, clientMessage.getClientName(), games[clientMessage.getGameId()]->getAllPlayers());
-                                clientController.setGameStatus(client.first, clientMessage.getGameId(), serverMessage.getMessage());
+                            if(joinGame(inboundMessage.getGameId(), client.first, inboundMessage.getClientName()) )
+                            {   //Send game data to conencting client
+                                RPA::ConnectionMessage outboundMessage(inboundMessage.getGameId(), client.first,State::CHARACTER_CREATION,inboundMessage.getClientName(), games[inboundMessage.getGameId()]->getAllPlayers(), ConnectionInstruction::JOIN_GAME);
+                                clientController.setGameStatus(client.first, inboundMessage.getGameId(), outboundMessage.getClientMessage());
+
+                                //Send new player data to other players in a game
+                                clientController.notifyGame(outboundMessage.getGameMessage(), games[inboundMessage.getGameId()], client.first);
                             }
-                            else
-                            {
-                                clientController.removeClient(client.first, games,"game id was invalid or game is full");
-                            }
+                            else clientController.removeClient(client.first, games);
                     }
                     else //Process Message Of in-progress game
                     {
-                        //processGameInstructions(clientMessage);
+                        std::string clientMessage = games[client.second.gameId]->recieveInstruction(recieved);
+                        //Checks for if the server needs to send a message back to the origin client (i.e. the client who sent the message)
+                        if(games[client.second.gameId]->hasOriginMessage()) clientController.notifyGame(clientMessage, games[client.second.gameId]);
+                        else clientController.notifyGame(clientMessage, games[client.second.gameId], client.first);
                     }
                 }
             }
@@ -79,9 +82,9 @@ namespace RPA
         {
             std::cout << se.what() << std::endl;
         }
-        catch (...)
+        catch (std::exception &e )
         {
-            std::cout << "CAUGHT IT" << std::endl;
+            std::cout << "CAUGHT: " << e.what() << std::endl;
         }
     }
 
@@ -99,26 +102,14 @@ namespace RPA
             mapIterator = games.find(gameId);
             if(mapIterator != games.end()) 
             {
+
                 if(games[gameId]->addPlayer(clientId, name))
                 {
-
                     return true;
                 }
             }
         }
         return false;
-    }
-
-    void Server::processGameInstructions(const std::vector<std::string>&  clientMessage)
-    {
-        unsigned int gameId = std::stoi(clientMessage[1]);
-        // 0 = server instruction
-        // 1 = gameId
-        // 2 = state manager instruction
-        // 3 = origin client id
-        // 4+ =  state instruction
-        std::string serverReply = games[gameId]->processInstruction(clientMessage);
-        clientController.notifyGame(gameId,serverReply, (unsigned int)std::stoi(clientMessage[3]), games);
     }
 
     std::vector<std::string> Server::split(const std::string& original, const char& delim)
@@ -230,7 +221,11 @@ namespace RPA
                 } 
                 else
                 {
-                    std::cout << "Current State: " << games[gameId]->getCurrentStateId() << "\nPlayers Connected " << games[gameId]->getPartySize() << std::endl;
+                    std::cout << "Current State: " << games[gameId]->getStateTypeId() << "\nPlayers Connected " << games[gameId]->getPartySize() << std::endl;
+                    for(auto& player : games[gameId]->getAllPlayers())
+                    {
+                        std::cout <<" Player - " << player->toDelimitedString() << std::endl;
+                    }
                 }
             }
             catch(std::invalid_argument& e)

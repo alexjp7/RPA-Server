@@ -1,22 +1,24 @@
 #pragma once
 #include <string>
 #include <vector>
-#include <memory>
+#include <cstddef>
 #include "../../GameSession/Player.h"
+#include "../../Enums/MessageType.cpp"
+#include "../../Enums/GameState.cpp"
 #include <nlohmann/json.hpp>
 
 using json = nlohmann::json;
 
 namespace RPA
 {
-
     class Message
     {
         protected:
-            int stateId;
+            RPA::State stateId;
             int gameId;
             int clientId;
-            std::string message;
+            std::string clientMessage;
+            std::string gameMessage;
 
         private:
             virtual void deserialize(const std::string&) = 0;
@@ -24,12 +26,13 @@ namespace RPA
             
         public:
             Message();
+            virtual ~Message() {}
             Message(const std::string&);
-            Message(const int& _stateId, const int& _gameId, const int& _clientId);
-            virtual std::string getMessage() = 0;
-            int getStateId() const;
+            Message(const int&, const int&);
+            std::string& getClientMessage();
+            std::string& getGameMessage();
+            RPA::State getStateId() const;
             int getGameId() const;
-
+            int getClientId() const;
     };
-    
 }

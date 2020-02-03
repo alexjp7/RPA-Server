@@ -35,7 +35,11 @@ set(JSON_DIR ${INSTALL_DIR}/install/)
 # Add executables to the cmake project
 add_executable(RPA_Server
         Server/MessageTypes/Message.cpp
-        Server/MessageTypes/ConnectionMessage.cpp
+        Enums/GameState.cpp
+        Enums/MessageType.cpp
+        Server/MessageTypes/ConnectionMessage.cpp 
+        Server/MessageTypes/CharacterCreationMessage.cpp 
+        GameSession/GameStates/GameState.cpp
         GameSession/GameStates/CharacterCreation.cpp
         GameSession/GameStates/StateManager.cpp
         Server/Server.cpp

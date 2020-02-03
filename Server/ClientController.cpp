@@ -51,30 +51,37 @@ namespace RPA
 		{
 			int gameId = clientRemoving->gameId;
 			games[gameId]->removePlayer(clientId); 
-			if(games[gameId]->getPartySize() == 0) games.erase(gameId); //Remove game if no players are connected to it
-			else notifyGame(gameId, "d," + std::to_string(clientId), games); //notify remaining players
+			if(games[gameId]->getPartySize() == 0) //Remove game if no players are connected to it
+			{
+				games.erase(gameId); 
+			} 
+			else//notify remaining players
+			{
+				notifyGame(RPA::ConnectionMessage(clientId, State::CHARACTER_CREATION, ConnectionInstruction::DISCONNECTION).getGameMessage(), games[gameId]); 
+			}
 		}
 		clientRemoving->socket.close();
 		clients.erase(clientId);
 	}
 
-	void ClientController::notifyGame(const unsigned int& gameId, std::string msg,  std::map<unsigned int, std::unique_ptr<RPA::Game> >&  games)
+	void ClientController::notifyGame(const std::string msg,  const std::unique_ptr<RPA::Game>& game)
 	{
-		for(auto& players: games[gameId]->getAllPlayers())
+		for(auto& players: game->getAllPlayers())
 			clients[players->getClientId()].socket.send(msg+"\n");
 	}
 
-	void ClientController::notifyGame(const unsigned int& gameId, std::string msg, const unsigned int& originClient,  std::map<unsigned int, std::unique_ptr<RPA::Game> >& games)
+	void ClientController::notifyGame(const std::string msg, const std::unique_ptr<RPA::Game>& game, const unsigned int& originClient)
 	{
-		for(auto& players: games[gameId]->getAllPlayers())
+		for(auto& players: game->getAllPlayers())
 		{
 			if(originClient != players->getClientId())
 				clients[players->getClientId()].socket.send(msg+"\n");
 		}
 	}
 
-	void ClientController::notifyClient(const unsigned int& clientId, const std::string& msg)
+	void ClientController::notifyClient(const unsigned int& clientId, const std::string& msg = "")
 	{
+		if(msg == "") return;
 		clients[clientId].socket.send(msg+"\n");
 	}
 

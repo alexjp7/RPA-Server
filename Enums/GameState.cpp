@@ -5,7 +5,7 @@ namespace RPA
 {
     enum class State
     {
-        CONNECTION,
-        CHARACTER_CREATION
+        CONNECTION = 0,
+        CHARACTER_CREATION = 1
     };
 }

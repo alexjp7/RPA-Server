@@ -23,12 +23,11 @@
 //Server objects
 #include "ClientController.h"
 //Game Objects
-#include "../Enums/State.cpp"
+#include "../Enums/GameState.cpp"
+#include "../Enums/MessageType.cpp"
 #include "../GameSession/Game.h"
 #include "../GameSession/Player.h"
-//Message Types
-#include "MessageTypes/Message.h"
-#include "MessageTypes/ConnectionMessage.h"
+
 
 using json = nlohmann::json;
 
@@ -63,7 +62,6 @@ namespace RPA
             void serve();
             void createGame(const unsigned int& clientId, const std::string& name);
             bool joinGame(const unsigned int& gameId, const unsigned int& clientId, const std::string& name);
-            void processGameInstructions(const std::vector<std::string>&  clientMessage);
             std::vector<std::string> split(const std::string& original, const char& delim);
             void printClients();
             void printGames();
