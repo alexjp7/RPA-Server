@@ -14,7 +14,7 @@ namespace RPA
 			{
 				client.socket = kt::Socket(server.accept(POLL_TIME));
 				clients.insert( std::pair<unsigned int,Client>(this->generateClientId(client.socket.getAddress(), client.socket.getPort()), client));
-				std::cout<<" Client CONNECTED -  Clients connected: " << clients.size() << std::endl;
+				std::cout <<" Client CONNECTED -  Clients connected: " << clients.size() << std::endl;
 			} //catch exception in order to cease thread block caused by server.accept(), and force isServing to be re-evaluated
 			catch (const kt::TimeoutException &e){} 
 		}
@@ -34,7 +34,7 @@ namespace RPA
 					{
 						client.second.m.lock();
 						this->removeClient(client.first, games);
-						std::cout<<" Client DISSCONNECTED - Clients Connected:: " << clients.size() << std::endl;
+						std::cout <<" Client DISSCONNECTED - Clients Connected:: " << clients.size() << std::endl;
 					}
 				}
 			}
@@ -44,7 +44,7 @@ namespace RPA
 	void ClientController::removeClient(const unsigned int& clientId,  std::map<unsigned int, std::unique_ptr<RPA::Game> >& games ,std::string msg)
 	{
 		Client* clientRemoving = &clients[clientId];
-		if(msg != "") {notifyClient(clientId, msg);}
+		notifyClient(clientId, "d");
 
 		//Remove client from game if in one
 		if(clientRemoving->hasGame)
@@ -109,7 +109,6 @@ namespace RPA
 	
 	bool ClientController::hasClients() const {return !this->clients.empty();}
 	std::map<unsigned int, Client>& ClientController::getClients()  {return this->clients;}
-
 } // namespace RPA
 
 

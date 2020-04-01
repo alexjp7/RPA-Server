@@ -12,7 +12,7 @@ namespace RPA
     //Intialises client listener threads and begins serving
     void Server::start()
     {
-        std::cout<<"STARTING SERVER..."<<std::endl;
+        std::cout << "STARTING SERVER..." << std::endl;
         this->isServing = true;
         try
         {	//Initialize Server Socket, client listener and client poller threads
@@ -102,7 +102,6 @@ namespace RPA
             mapIterator = games.find(gameId);
             if(mapIterator != games.end()) 
             {
-
                 if(games[gameId]->addPlayer(clientId, name))
                 {
                     return true;
@@ -134,7 +133,7 @@ namespace RPA
 
     void Server::shutdown()
     {
-        std::cout<<"STOPPING SERVER.."<<std::endl;
+        std::cout << "STOPPING SERVER.." << std::endl;
 
         commandListener->join();
         clientListener->join();
@@ -144,10 +143,8 @@ namespace RPA
         if(!clientController.hasClients())
         {
             for(auto& client: clientController.getClients())
-            {
-                //clientController.notifyClient(client.first, "s,server shutdown");
                 client.second.socket.close();
-            }
+                
             clientController.getClients().clear();
         }
         serverSocket.close();
