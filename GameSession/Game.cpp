@@ -12,16 +12,20 @@ namespace RPA
     Game::Game(const unsigned int& playerId, const std::string& name)
     {   //the game id is the same as the client Id who created the game
         this->gameId = playerId;
+        this->partyLeaderId = gameId;
         auto manager = std::make_unique<RPA::StateManager>(); //Pushes character creation state 
         this->stateManager = std::move(manager);
-        this->addPlayer(playerId, name);
+        this->addPlayer(playerId, name); ////id, display name, is party leader
     }
 
     bool Game::addPlayer(const unsigned int& playerId, const std::string& name)
     {
         if(this->players.size() == PARTY_LIMIT) {return false;}
-        auto player = std::make_unique<Player>(playerId, name);
+
+        //First player of a game is the default party leader
+        auto player = std::make_unique<Player>(playerId, name, this->players.size() == 0);
         this->players.push_back(std::move(player));
+
         return true;
     }
 
@@ -30,16 +34,29 @@ namespace RPA
     {
         unsigned int playerBeingRemoved = -1;
         if(this->players.size() == 1)
+        {
               playerBeingRemoved = 0;
+        }
         else
         {
             for (unsigned int i = 0; i < this->players.size(); i++)
             {
                 if(this->players[i]->getClientId() == playerId)
+                {
                     playerBeingRemoved = i;
+                }
             }
         }
-        resize(playerBeingRemoved); 
+
+        resize(playerBeingRemoved);
+        
+        //Reset party leader first joined player from remaining players
+        if(this->players.size()  > 0)
+        {
+
+            this->partyLeaderId = this->players[0]->getClientId(); 
+            this->players[0]->setPartyLeader(true);
+        }
     }
 
     //Removes dissconected player while maintaining contiguous array
@@ -68,8 +85,18 @@ namespace RPA
     
     std::string Game::recieveInstruction(const std::string& clientMessage)
     {
-        this->stateManager->getCurrentState()->processInstruction(this->players, clientMessage);
-        return this->stateManager->getCurrentState()->getClientMessage();
+        //Process client state instruction
+        const auto& currentGameState =  stateManager->getCurrentState(); 
+        currentGameState->processInstruction(players, clientMessage);
+        
+        //Check for any state changes iniaited from client
+        if(currentGameState->hasRecievedStateChanged())
+        {
+            stateManager->addState(currentGameState->getNextState(), 
+                                   currentGameState->isRemovingPrevious());
+        }
+
+        return currentGameState->getClientMessage();
     }
 
     //Test print out
@@ -84,10 +111,14 @@ namespace RPA
         (this->players).clear();
     }
 
-    const unsigned int Game::getId() const { return this->gameId;}
+    //Player Party 
     unsigned int Game::getPartySize() const { return this->players.size();}
     std::vector<std::unique_ptr<Player> > const& Game::getAllPlayers() const{ return this->players;}
-    bool Game::hasOriginMessage() const { return this->stateManager->getCurrentState()->hasOriginMessage(); }
+    //Game Id
+    const unsigned int Game::getId() const { return this->gameId;}
+    //Game States
     RPA::State Game::getStateId() const { this->stateManager->getCurrentState()->getStateId();}
     std::string Game::getStateTypeId() const {return typeid(*(this->stateManager->getCurrentState())).name();}
+    //Flag to determine whether the instruction that was processed included a message for origin client (sender)
+    bool Game::hasOriginMessage() const { return this->stateManager->getCurrentState()->hasOriginMessage(); }
 }

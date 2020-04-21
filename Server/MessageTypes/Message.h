@@ -17,7 +17,9 @@ namespace RPA
             RPA::State stateId;
             int gameId;
             int clientId;
+            //Message string intended to be sent to client who sent it
             std::string clientMessage;
+            //Message string for all clients within a game 
             std::string gameMessage;
 
         private:

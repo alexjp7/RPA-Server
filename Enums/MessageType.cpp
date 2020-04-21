@@ -11,9 +11,15 @@ namespace RPA
     };
     enum class CreationInstruction
     {
-        CONNECTION = 0,
+        CONNECTION = 0, 
         DISCONNECTION = 1,
         CLASS_CHANGE = 2,
-        READY_UP = 3
+        READY_UP = 3,
+        GAME_START = 4,
+    };
+
+    enum class BattleStateInstruction
+    {
+        DISCONNECTION = 0
     };
 }

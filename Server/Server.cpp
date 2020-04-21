@@ -53,9 +53,9 @@ namespace RPA
                         //Player Creating Game
                         if( inboundMessage.getGameId() == -1) 
                         {
-                            createGame(client.first, inboundMessage.getClientName());
+                            createGame(client.first, inboundMessage.getClientName()); //Creates game and sets party leader
                             RPA::ConnectionMessage outboundMessage(client.first, client.first,State::CHARACTER_CREATION, inboundMessage.getClientName(), games[client.first]->getAllPlayers());
-                            clientController.setGameStatus(client.first, client.first, outboundMessage.getClientMessage());
+                            clientController.setGameStatus(client.first, client.first, outboundMessage.getClientMessage()); 
                         }
                         else // Player Joining Game
                             if(joinGame(inboundMessage.getGameId(), client.first, inboundMessage.getClientName()) )
@@ -66,14 +66,22 @@ namespace RPA
                                 //Send new player data to other players in a game
                                 clientController.notifyGame(outboundMessage.getGameMessage(), games[inboundMessage.getGameId()], client.first);
                             }
-                            else clientController.removeClient(client.first, games);
+                            else
+                            {
+                                clientController.removeClient(client.first, games);
+                            } 
                     }
                     else //Process Message Of in-progress game
                     {
                         std::string clientMessage = games[client.second.gameId]->recieveInstruction(recieved);
-                        //Checks for if the server needs to send a message back to the origin client (i.e. the client who sent the message)
-                        if(games[client.second.gameId]->hasOriginMessage()) clientController.notifyGame(clientMessage, games[client.second.gameId]);
-                        else clientController.notifyGame(clientMessage, games[client.second.gameId], client.first);
+                        if(games[client.second.gameId]->hasOriginMessage()) 
+                        {
+                            clientController.notifyGame(clientMessage, games[client.second.gameId]);
+                        }
+                        else 
+                        {
+                            clientController.notifyGame(clientMessage, games[client.second.gameId], client.first);
+                        }
                     }
                 }
             }

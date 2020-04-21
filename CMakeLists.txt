@@ -39,9 +39,11 @@ add_executable(RPA_Server
         Enums/MessageType.cpp
         Server/MessageTypes/ConnectionMessage.cpp 
         Server/MessageTypes/CharacterCreationMessage.cpp 
+        Server/MessageTypes/BattleStateMessage.cpp 
         GameSession/GameStates/GameState.cpp
         GameSession/GameStates/CharacterCreation.cpp
         GameSession/GameStates/StateManager.cpp
+        GameSession/GameStates/BattleState.cpp
         Server/Server.cpp
         Server/ClientController.cpp
         GameSession/Player.cpp

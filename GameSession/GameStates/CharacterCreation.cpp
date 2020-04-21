@@ -21,6 +21,12 @@ namespace RPA
             case RPA::CreationInstruction::READY_UP:
                 this->getPlayer(players, clientMessage.getClientId())->toggleReady();
                 break;
+                
+            case RPA::CreationInstruction::GAME_START:
+                this->hasNextState = true;
+                this->isRemoving = true;
+                this->nextState = RPA::State::BATTLE_STATE;
+                break;
 
             default:
                 break;

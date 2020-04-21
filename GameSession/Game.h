@@ -17,6 +17,7 @@ namespace RPA
             static const unsigned int PARTY_LIMIT = 4;
         private:
             unsigned int gameId;
+            unsigned int partyLeaderId;
             std::vector<std::unique_ptr<RPA::Player> > players;
             std::unique_ptr<RPA::StateManager> stateManager;
 

@@ -9,6 +9,32 @@ namespace RPA
         states.push_back(std::move(characterCreationState));
     }
 
-    std::unique_ptr<GameState> const& StateManager::getCurrentState() const { return this->states.back(); }
-    StateManager::~StateManager() {this->states.clear();}
-} // namespace RPA
+    void StateManager::addState(RPA::State newGameState, bool isRemovingPrevious)
+    {
+        if(isRemovingPrevious)
+        {
+            states.erase(states.end());
+        }
+
+        switch (newGameState)
+        {
+            case RPA::State::BATTLE_STATE:
+                states.push_back(std::make_unique<RPA::BattleState>());
+                break;
+            default:
+                break;
+        }
+
+
+    }
+
+    std::unique_ptr<GameState> const& StateManager::getCurrentState() const 
+    {
+         return this->states.back(); 
+    }
+
+    StateManager::~StateManager() 
+    {
+        this->states.clear();
+    }
+} 

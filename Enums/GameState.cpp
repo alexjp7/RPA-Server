@@ -6,6 +6,7 @@ namespace RPA
     enum class State
     {
         CONNECTION = 0,
-        CHARACTER_CREATION = 1
+        CHARACTER_CREATION = 1,
+        BATTLE_STATE = 2
     };
 }
