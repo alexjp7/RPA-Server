@@ -74,6 +74,7 @@ namespace RPA
                     else //Process Message Of in-progress game
                     {
                         std::string clientMessage = games[client.second.gameId]->recieveInstruction(recieved);
+                        
                         if(games[client.second.gameId]->hasOriginMessage()) 
                         {
                             clientController.notifyGame(clientMessage, games[client.second.gameId]);

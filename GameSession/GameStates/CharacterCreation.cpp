@@ -1,4 +1,5 @@
 #include "CharacterCreation.h"
+#include <iostream>
 
 namespace RPA
 {
@@ -6,6 +7,7 @@ namespace RPA
     {
         this->stateId = RPA::State::CHARACTER_CREATION;
         this->originMessage = false;
+        this->hasNextState = false;
     }
     
     void CharacterCreation::processInstruction(const std::vector<std::unique_ptr<RPA::Player> >& players, const std::string& message)
@@ -25,6 +27,7 @@ namespace RPA
             case RPA::CreationInstruction::GAME_START:
                 this->hasNextState = true;
                 this->isRemoving = true;
+                this->originMessage = false;
                 this->nextState = RPA::State::BATTLE_STATE;
                 break;
 

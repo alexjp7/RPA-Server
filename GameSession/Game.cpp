@@ -88,6 +88,7 @@ namespace RPA
         //Process client state instruction
         const auto& currentGameState =  stateManager->getCurrentState(); 
         currentGameState->processInstruction(players, clientMessage);
+        std::string instruction = currentGameState->getClientMessage();
         
         //Check for any state changes iniaited from client
         if(currentGameState->hasRecievedStateChanged())
@@ -96,7 +97,7 @@ namespace RPA
                                    currentGameState->isRemovingPrevious());
         }
 
-        return currentGameState->getClientMessage();
+        return instruction;
     }
 
     //Test print out
